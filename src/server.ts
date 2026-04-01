@@ -69,7 +69,8 @@ async function startServer(): Promise<void> {
 
 startServer().catch((error) => {
   logError("server_start_failed", {
-    error: error instanceof Error ? error.message : String(error)
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
   });
   process.exit(1);
 });
