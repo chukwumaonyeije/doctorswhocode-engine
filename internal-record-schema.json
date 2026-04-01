@@ -1,0 +1,17 @@
+{
+  "id": "unique-stable-id",
+  "source_type": "webpage",
+  "source_reference": "https://example.com/article",
+  "raw_input": "original user message or extracted content",
+  "normalized_text": "cleaned text body",
+  "title": "Example Title",
+  "authors": ["Author One"],
+  "publication": "Journal or Site Name",
+  "date": "2026-04-01",
+  "completeness": "full_text | abstract_only | transcript_only | partial | unknown",
+  "requested_action": "digest",
+  "tags": ["ai", "medicine"],
+  "created_at": "2026-04-01T12:00:00Z",
+  "model": "gpt-5",
+  "status": "processed"
+}

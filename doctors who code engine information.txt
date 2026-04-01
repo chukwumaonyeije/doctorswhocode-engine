@@ -1,0 +1,191 @@
+---
+title: "Inbox to Insight: Building the Doctors Who Code Engine"
+description: "I didn't need another note-taking app. I needed a system that thinks with me. Here is how I built a physician-grade research pipeline that converts saved links, PubMed articles, and voice notes into publishable MDX."
+pubDate: 2026-04-01
+author: "Chukwuma Onyeije, MD"
+tags: ["systems", "typescript", "ai-tools", "research", "infrastructure", "physician-developer"]
+series: "Infrastructure Imperative"
+draft: false
+---
+
+Every physician has the same hidden backlog.
+
+Saved links from morning rounds. Screenshots of abstracts. PubMed articles bookmarked during call. Voice notes recorded in the parking garage after a consult you didn't want to forget.
+
+The problem is not information. Every physician I know has more of it than they can process.
+
+The problem is conversion. Insight is not the same as input. Output is not the same as storage. And most of us have spent years optimizing for capture while building zero infrastructure for transformation.
+
+I stopped trying to fix my habits. I built a system instead.
+
+---
+
+## From Consumption to Systems Thinking
+
+Most physicians operate on a read-and-forget loop. We consume clinical literature, save articles we intend to revisit, and accumulate notes we never synthesize. The backlog grows. The guilt compounds. The insight rate stays flat.
+
+Developers think differently about this problem. They do not try to be more disciplined. They build pipelines. They automate transformation. They design systems where friction is the enemy and output is the goal.
+
+The insight that changed how I work: what if research behaved like code?
+
+Code has inputs, logic, and outputs. It is deterministic. It produces artifacts. It runs again when you need it. Most importantly, it accumulates. Every function you write makes the next one faster.
+
+I wanted my intellectual work to behave the same way.
+
+---
+
+## What I Built
+
+I am calling it the Doctors Who Code Engine.
+
+It is a system that converts links, transcripts, PubMed articles, and voice notes into structured summaries, archived knowledge, and publishable MDX blog posts. It runs on Telegram. It uses TypeScript as the core. It thinks with Claude and OpenAI. It saves everything to GitHub. It deploys on Railway. It publishes through Astro.
+
+The interface is a message. The output is a file. Nothing disappears.
+
+---
+
+## The Architecture
+
+The pipeline has a simple shape:
+
+**Telegram → Ingestion → Normalization → Command → Output → Archive**
+
+Each layer does one job.
+
+Telegram is the input surface. I send links from anywhere. A PubMed URL from my phone. A transcript from a recorded consult. A voice note transcribed on the fly. The friction of entry is as low as sending a text message.
+
+The TypeScript engine is the core logic. It parses what I send, determines the content type, routes it to the right processor, and executes the command I specify.
+
+The reasoning layer is Claude or OpenAI depending on the task. This is where the content gets understood, not just received.
+
+GitHub is the source of truth. Every output becomes a file in a version-controlled repository. Nothing lives in an app that might disappear. Nothing depends on a vendor's continued existence.
+
+Railway is the deployment layer. The bot runs continuously. It does not need me to open a laptop.
+
+Astro is the publishing layer. MDX files drop directly into my blog's content directory. A commit triggers a deploy. The post is live.
+
+---
+
+## The Four Commands
+
+The interface is intentionally small. There are four commands.
+
+**digest** produces a fast, high-signal summary designed for clinical consumption. I use this when I need to understand a paper quickly and move on. It respects my time and does not pad the output.
+
+**file** archives the content with structured metadata. Title, authors, date, abstract, tags, my notes. It builds the knowledge base without requiring me to organize anything manually.
+
+**summarize** generates a structured breakdown designed for reuse. This output is formatted to become source material for future writing or presentations. It is not a condensed abstract. It is organized thinking.
+
+**mdx** generates a full blog post ready for Astro. It takes the source content, builds a narrative around it, formats it in MDX, and saves it directly to my content directory. This is the command that closes the loop between research and publication.
+
+---
+
+## A Real Workflow
+
+Here is what it looks like in practice.
+
+I am reviewing literature on cervical length screening in twins. I find a relevant Cochrane review. From my phone, I send:
+
+mdx https://pubmed.ncbi.nlm.nih.gov/XXXXXXXX
+
+The engine fetches the article. It identifies the content type. It extracts the clinical question, the methodology, the findings, and the limitations. It builds a narrative structured for physician-developers. It generates MDX with proper frontmatter. It saves the file to content/blog/ in my GitHub repository.
+
+No copy-paste. No context switching. No "I'll write this up later" that becomes never.
+
+The post exists. It is versioned. It is publishable with a single deploy command.
+
+---
+
+## The File-First Philosophy
+
+This system is not a chatbot. Chatbots generate responses. Responses disappear into a scroll.
+
+Everything the engine produces becomes a file.
+
+archive/
+content/blog/
+transcripts/
+summaries/
+
+Your thinking becomes searchable. Your research becomes composable. Your intellectual output becomes permanent.
+
+This is the difference between knowledge that evaporates and knowledge that compounds. A note in a chat interface has a half-life. A versioned file in a git repository does not expire.
+
+I treat my knowledge base the same way I treat my codebase. Both are assets. Both grow in value over time. Both require architecture.
+
+---
+
+## Why This Matters for Physician-Builders
+
+This is not a productivity argument. I am not interested in optimizing time management. Every productivity system I have ever tried eventually collapsed under the weight of clinical reality.
+
+This is an infrastructure argument.
+
+Physicians who build must think about where their intellectual output goes. Most of us pour thinking into conversations that end, notes that stay local, and tools that belong to someone else's platform. We generate insight and then let it disappear.
+
+The Doctors Who Code Engine is designed around a different assumption: every piece of thinking you produce is a potential asset. Your job is to build the system that captures it, transforms it, and makes it accessible for the next time you need it.
+
+You do not need more discipline. You need better infrastructure.
+
+---
+
+## What Makes This Different
+
+Most AI tools generate answers. This system generates infrastructure.
+
+Most AI tools disappear after a session ends. This system accumulates value over time.
+
+The flywheel is real. Every link you send strengthens the archive. Every article you process enriches the knowledge base. Every post you publish accelerates the next one. The system gets more useful the more you use it, not because it learns your preferences, but because it builds your library.
+
+---
+
+## The Build Philosophy
+
+I kept the architecture small on purpose.
+
+Small modules. Typed inputs. Deterministic outputs. File-backed system. No black boxes.
+
+I can read every function. I can trace every transformation. I can extend any component without touching the others. If Claude changes its API tomorrow, I swap the reasoning layer. The rest stays intact.
+
+This is not vibe coding. It is not a prompt chain duct-taped together. It is structured intelligence: a system designed to last longer than the tools it runs on.
+
+---
+
+## The Stack
+
+- TypeScript (core logic)
+- Telegram Bot API (input layer)
+- Claude / OpenAI (reasoning layer)
+- GitHub (source of truth)
+- Railway (deployment)
+- Astro with MDX (publishing layer)
+
+None of these are exotic choices. Every component is maintainable, replaceable, and documented. That is by design.
+
+---
+
+## Start Here
+
+The full PRD, architecture documentation, and working Telegram pipeline are in the repository.
+
+[Explore the Engine on GitHub](https://github.com/YOUR_USERNAME/CodeCraftMD-Research-Agent)
+
+What you will find: the modular architecture, the ingestion system, the four command processors, and the MDX generation pipeline. Fork it. Extend it. Build your own version.
+
+If you are a physician who codes, or who wants to, this is the kind of system worth understanding. Not because you need to run my exact setup, but because the pattern is transferable. Input layer, reasoning layer, file-backed output, version control. Those four components will serve you in any domain you build for.
+
+---
+
+## The Real Shift
+
+We spend a lot of time talking about AI replacing physicians.
+
+The more interesting question is which physicians build the systems and which physicians wait to use whatever the systems produce.
+
+Builders do not just consume knowledge. They compile it. They version it. They ship it.
+
+The Doctors Who Code Engine is my attempt to work that way: not harder, not faster, but with infrastructure that makes every hour of clinical thinking more durable than it would have been otherwise.
+
+Your inbox is full of insight waiting to be converted.
+
+Build the pipeline.

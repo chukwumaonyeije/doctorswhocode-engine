@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+archive/records/*.json
+archive/sources/*.md
+archive/summaries/*.md
+archive/transcripts/*.md

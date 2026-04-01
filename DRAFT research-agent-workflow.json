@@ -1,0 +1,305 @@
+{
+  "name": "CodeCraftMD Research Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "📱 Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CRED_ID",
+          "name": "Telegram Bot - Research Agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.first().json.message;\nconst text = msg?.text || '';\nconst chatId = msg?.chat?.id;\nconst messageId = msg?.message_id;\n\n// Detect input type\nconst urlPattern = /https?:\\/\\/[^\\s]+/gi;\nconst urls = text.match(urlPattern) || [];\n\nlet inputType = 'text';\nlet primaryUrl = null;\n\nif (urls.length > 0) {\n  inputType = 'url';\n  primaryUrl = urls[0];\n  \n  // Detect platform\n  if (primaryUrl.includes('youtube.com') || primaryUrl.includes('youtu.be')) {\n    inputType = 'youtube';\n  } else if (primaryUrl.includes('pubmed') || primaryUrl.includes('nejm') || primaryUrl.includes('bmj') || primaryUrl.includes('lancet') || primaryUrl.includes('jamanetwork')) {\n    inputType = 'paper';\n  } else if (primaryUrl.includes('twitter.com') || primaryUrl.includes('x.com')) {\n    inputType = 'tweet';\n  }\n}\n\nconst cleanText = text.replace(urlPattern, '').trim();\nconst userNote = cleanText.length > 0 ? cleanText : null;\n\nreturn [{\n  json: {\n    chatId,\n    messageId,\n    rawText: text,\n    inputType,\n    primaryUrl,\n    userNote,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "router",
+      "name": "🔀 Input Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "url-condition",
+              "leftValue": "={{ $json.inputType }}",
+              "rightValue": "url",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "url-switch",
+      "name": "🔀 URL or Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 400]
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $json.primaryUrl }}",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "text/plain"
+            },
+            {
+              "name": "X-Return-Format",
+              "value": "markdown"
+            }
+          ]
+        }
+      },
+      "id": "jina-extractor",
+      "name": "🌐 Jina.ai Extractor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge URL content with router metadata\nconst routerData = $('🔀 Input Router').first().json;\nconst rawContent = $input.first().json;\n\nlet extractedText = '';\nif (typeof rawContent === 'string') {\n  extractedText = rawContent;\n} else if (rawContent.body) {\n  extractedText = rawContent.body;\n} else if (rawContent.data) {\n  extractedText = rawContent.data;\n} else {\n  extractedText = JSON.stringify(rawContent);\n}\n\n// Truncate to ~8000 words to stay within token limits\nconst words = extractedText.split(' ');\nconst truncated = words.slice(0, 8000).join(' ');\nconst wasTruncated = words.length > 8000;\n\nreturn [{\n  json: {\n    ...routerData,\n    extractedText: truncated,\n    wordCount: words.length,\n    wasTruncated,\n    sourceType: 'url'\n  }\n}];"
+      },
+      "id": "merge-url",
+      "name": "🔗 Merge URL Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pass raw text through\nconst routerData = $input.first().json;\n\nreturn [{\n  json: {\n    ...routerData,\n    extractedText: routerData.rawText,\n    wordCount: routerData.rawText.split(' ').length,\n    wasTruncated: false,\n    sourceType: 'raw_text'\n  }\n}];"
+      },
+      "id": "pass-text",
+      "name": "📝 Pass Raw Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge both paths\nconst data = $input.first().json;\nreturn [{ json: data }];"
+      },
+      "id": "merge-paths",
+      "name": "⚡ Merge Paths",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 400]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": {
+          "__rl": true,
+          "value": "claude-opus-4-5",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "user",
+              "content": "=You are the writing engine for DoctorsWhoCode.blog, authored by Dr. Chukwuma Onyeije MD — a Maternal-Fetal Medicine specialist, physician-developer, endurance athlete, and Seventh-day Adventist elder.\n\nVoice rules (NON-NEGOTIABLE):\n- No em-dashes. Use periods or colons instead.\n- No AI filler phrases (\"delve\", \"it's worth noting\", \"in conclusion\", \"game-changer\", \"leveraging\", \"robust\", \"at the end of the day\")\n- First-person active voice\n- Short declarative paragraphs (2-3 sentences max)\n- Physician mindset: precision > poetry\n- Builder mindset: what can I BUILD with this?\n- Intellectually serious, never preachy\n\nSOURCE CONTENT:\n{{ $json.extractedText }}\n\nSOURCE TYPE: {{ $json.inputType }}\nSOURCE URL: {{ $json.primaryUrl }}\nUSER NOTE: {{ $json.userNote }}\n\n---\n\nGenerate ALL of the following, separated by the exact section headers shown:\n\n=== EXECUTIVE_SUMMARY ===\n5 bullet points. Clinically relevant. Lead with the finding, not the methodology. Each bullet one sentence.\n\n=== BLOG_POST ===\nWrite a complete DoctorsWhoCode.blog post in MDX-ready format.\n\nStructure:\n- Title: compelling, specific, not clickbait\n- Subtitle: one sentence\n- Hook paragraph: open with a clinical scenario or provocative observation\n- Section 1: The core finding or argument\n- Section 2: Why physicians should care\n- Section 3: What builders can do with this\n- Section 4 (if applicable): Clinical translation / decision framework\n- Closing: What Dr. Onyeije is building or watching because of this\n\nLength: 600-900 words. No fluff. Every sentence earns its place.\n\n=== CLINICAL_TRANSLATION ===\nIf the content has clinical relevance:\n- Protocol implications\n- Decision framework changes\n- Risk/bias considerations\n- SMFM/ACOG guideline connections\nIf not clinical, write: NOT_APPLICABLE\n\n=== LINKEDIN_POST ===\nWrite a LinkedIn post. 150-200 words. Authority tone. 1-2 emojis max. Start with a hook sentence that physicians will stop scrolling for. End with a question or call to action.\n\n=== TWITTER_THREAD ===\nWrite a Twitter/X thread. 5-7 tweets. Each under 280 characters. Number them 1/ through 7/. First tweet is the hook. Last tweet is the synthesis or call to action."
+            }
+          ]
+        },
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.7
+        }
+      },
+      "id": "claude-writer",
+      "name": "🧠 Claude Writing Engine",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1,
+      "position": [1680, 400],
+      "credentials": {
+        "anthropicApi": {
+          "id": "ANTHROPIC_CRED_ID",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutput = $input.first().json.text || $input.first().json.content || '';\nconst routerData = $('⚡ Merge Paths').first().json;\n\n// Parse sections\nfunction extractSection(text, sectionName) {\n  const startMarker = `=== ${sectionName} ===`;\n  const start = text.indexOf(startMarker);\n  if (start === -1) return null;\n  \n  const contentStart = start + startMarker.length;\n  \n  // Find next section\n  const nextSection = text.indexOf('=== ', contentStart);\n  const end = nextSection === -1 ? text.length : nextSection;\n  \n  return text.slice(contentStart, end).trim();\n}\n\nconst executiveSummary = extractSection(rawOutput, 'EXECUTIVE_SUMMARY');\nconst blogPost = extractSection(rawOutput, 'BLOG_POST');\nconst clinicalTranslation = extractSection(rawOutput, 'CLINICAL_TRANSLATION');\nconst linkedinPost = extractSection(rawOutput, 'LINKEDIN_POST');\nconst twitterThread = extractSection(rawOutput, 'TWITTER_THREAD');\n\n// Extract title from blog post\nlet blogTitle = 'Untitled Post';\nif (blogPost) {\n  const titleMatch = blogPost.match(/^#?\\s*Title:\\s*(.+)/m) || \n                    blogPost.match(/^#\\s+(.+)/m) ||\n                    blogPost.match(/\\*\\*Title:\\*\\*\\s*(.+)/m);\n  if (titleMatch) blogTitle = titleMatch[1].trim();\n}\n\n// Generate slug\nconst slug = blogTitle\n  .toLowerCase()\n  .replace(/[^a-z0-9\\s]/g, '')\n  .replace(/\\s+/g, '-')\n  .slice(0, 60);\n\nconst today = new Date().toISOString().split('T')[0];\n\n// Build MDX frontmatter\nconst mdxContent = `---\ntitle: \"${blogTitle}\"\ndate: \"${today}\"\ntags: [\"AI\", \"Medicine\", \"Physician Builders\"]\nauthor: \"Chukwuma Onyeije MD\"\ndescription: \"\"\ndraft: true\n---\n\n${blogPost}`;\n\nreturn [{\n  json: {\n    ...routerData,\n    rawOutput,\n    executiveSummary,\n    blogPost,\n    clinicalTranslation,\n    linkedinPost,\n    twitterThread,\n    blogTitle,\n    slug,\n    today,\n    mdxContent,\n    mdxFilename: `${today}-${slug}.mdx`\n  }\n}];"
+      },
+      "id": "parser",
+      "name": "🔍 Output Parser",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 400]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "create",
+        "owner": {
+          "__rl": true,
+          "value": "YOUR_GITHUB_USERNAME",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "doctorswhocode-blog",
+          "mode": "name"
+        },
+        "filePath": "=src/content/blog/drafts/{{ $json.mdxFilename }}",
+        "fileContent": "={{ $json.mdxContent }}",
+        "commitMessage": "=[Research Agent] Draft: {{ $json.blogTitle }}",
+        "additionalParameters": {
+          "branch": "drafts"
+        }
+      },
+      "id": "github-push",
+      "name": "📁 Push to GitHub",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [2160, 280],
+      "credentials": {
+        "githubApi": {
+          "id": "GITHUB_CRED_ID",
+          "name": "GitHub - DoctorsWhoCode"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('🔀 Input Router').first().json.chatId }}",
+        "text": "=✅ *Research Engine Complete*\n\n📌 *{{ $json.blogTitle }}*\n\n---\n📊 *EXECUTIVE SUMMARY*\n{{ $json.executiveSummary }}\n\n---\n💼 *LINKEDIN POST*\n{{ $json.linkedinPost }}\n\n---\n🐦 *TWITTER THREAD*\n{{ $json.twitterThread }}\n\n---\n📝 Blog draft pushed to GitHub: `drafts/{{ $json.mdxFilename }}`\n\n_Reply with /clinical for clinical translation_",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-response",
+      "name": "📤 Telegram Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2160, 520],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CRED_ID",
+          "name": "Telegram Bot - Research Agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('🔀 Input Router').first().json.chatId }}",
+        "text": "⏳ Processing your content... This takes 20-40 seconds.",
+        "additionalFields": {}
+      },
+      "id": "ack-message",
+      "name": "✉️ Acknowledge Input",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [720, 560],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CRED_ID",
+          "name": "Telegram Bot - Research Agent"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "📱 Telegram Trigger": {
+      "main": [
+        [{ "node": "🔀 Input Router", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔀 Input Router": {
+      "main": [
+        [
+          { "node": "🔀 URL or Text?", "type": "main", "index": 0 },
+          { "node": "✉️ Acknowledge Input", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "🔀 URL or Text?": {
+      "main": [
+        [{ "node": "🌐 Jina.ai Extractor", "type": "main", "index": 0 }],
+        [{ "node": "📝 Pass Raw Text", "type": "main", "index": 0 }]
+      ]
+    },
+    "🌐 Jina.ai Extractor": {
+      "main": [
+        [{ "node": "🔗 Merge URL Content", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔗 Merge URL Content": {
+      "main": [
+        [{ "node": "⚡ Merge Paths", "type": "main", "index": 0 }]
+      ]
+    },
+    "📝 Pass Raw Text": {
+      "main": [
+        [{ "node": "⚡ Merge Paths", "type": "main", "index": 0 }]
+      ]
+    },
+    "⚡ Merge Paths": {
+      "main": [
+        [{ "node": "🧠 Claude Writing Engine", "type": "main", "index": 0 }]
+      ]
+    },
+    "🧠 Claude Writing Engine": {
+      "main": [
+        [{ "node": "🔍 Output Parser", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔍 Output Parser": {
+      "main": [
+        [
+          { "node": "📁 Push to GitHub", "type": "main", "index": 0 },
+          { "node": "📤 Telegram Response", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    { "name": "CodeCraftMD" },
+    { "name": "DoctorsWhoCode" },
+    { "name": "Research Engine" }
+  ],
+  "meta": {
+    "instanceId": "research-agent-v1",
+    "templateCredsSetupCompleted": false
+  }
+}

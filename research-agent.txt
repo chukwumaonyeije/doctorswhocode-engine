@@ -1,0 +1,73 @@
+research-agent/
+│
+├── README.md
+├── PRD-research-agent.md
+├── PROJECT-BRIEF.md
+├── package.json
+├── tsconfig.json
+├── railway.json
+├── .env.example
+├── .gitignore
+│
+├── src/
+│   ├── server.ts
+│   ├── config.ts
+│   ├── types.ts
+│
+│   ├── telegram/
+│   │   ├── webhook.ts
+│   │   ├── router.ts
+│   │   └── parseCommand.ts
+│
+│   ├── ingest/
+│   │   ├── url.ts
+│   │   ├── pubmed.ts
+│   │   ├── text.ts
+│   │   └── transcript.ts
+│
+│   ├── normalize/
+│   │   └── normalizeInput.ts
+│
+│   ├── actions/
+│   │   ├── digest.ts
+│   │   ├── file.ts
+│   │   ├── summarize.ts
+│   │   └── mdx.ts
+│
+│   ├── render/
+│   │   ├── mdx.ts
+│   │   ├── markdown.ts
+│   │   └── telegram.ts
+│
+│   ├── llm/
+│   │   ├── openai.ts
+│   │   └── prompts.ts
+│
+│   ├── storage/
+│   │   ├── fs.ts
+│   │   └── slugify.ts
+│
+│   └── utils/
+│       ├── logger.ts
+│       └── errors.ts
+│
+├── prompts/
+│   ├── digest.md
+│   ├── summarize.md
+│   ├── mdx.md
+│   └── file.md
+│
+├── configs/
+│   ├── modes.json
+│   └── taxonomy.json
+│
+├── content/
+│   └── blog/
+│
+├── archive/
+│   ├── records/
+│   ├── sources/
+│   ├── transcripts/
+│   └── summaries/
+│
+└── tests/

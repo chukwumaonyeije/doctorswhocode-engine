@@ -1,0 +1,14 @@
+{
+  "digest": {
+    "aliases": ["digest", "quick digest", "digest it"]
+  },
+  "file": {
+    "aliases": ["file", "archive", "file it"]
+  },
+  "summarize": {
+    "aliases": ["summarize", "summary", "summarize it"]
+  },
+  "mdx": {
+    "aliases": ["mdx", "blog", "create a full mdx astro blog", "create mdx", "astro"]
+  }
+}

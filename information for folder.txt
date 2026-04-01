@@ -1,0 +1,618 @@
+Yes — and for Codex, the strongest approach is to place a **clear PRD plus a repo-local operating brief** in the folder, because Codex is designed for multi-agent coding workflows and supports reusable skills/plugins/workflow packaging, which makes structured project instructions especially valuable. ([OpenAI][1])
+
+Below is a **repo-ready PRD** you can drop into your project as something like `PRD-research-agent.md`.
+
+````markdown
+# PRD: Telegram-to-Astro Research Agent
+Version: 1.0
+Owner: Dr. Chukwuma Onyeije
+Status: Draft
+Primary Environment: Local repo + GitHub + Railway + Codex
+Primary Interface: Telegram bot
+Primary Outputs: Digest, File, Summary, MDX Astro blog post
+
+---
+
+## 1. Purpose
+
+Build a robust, file-backed, command-driven research ingestion system that accepts heterogeneous inputs from Telegram and converts them into structured outputs for review, archiving, and publishing.
+
+The system must support:
+- plain text
+- webpage URLs
+- research article links
+- PubMed IDs / PubMed URLs
+- YouTube transcript text or transcript-derived input
+- spoken audio transcribed upstream (for example via Whisper or another transcription layer)
+
+The system must respond to explicit commands such as:
+- digest it
+- file it
+- summarize it
+- create a full mdx astro blog
+
+This is not a generic chatbot. It is a source-aware ingestion and rendering engine for physician-builder knowledge work.
+
+---
+
+## 2. Product Vision
+
+Create a personal research operating system that allows the user to send content from mobile or desktop, convert it into a normalized internal representation, and route it into one of four deterministic output modes:
+
+1. Digest
+2. File
+3. Summarize
+4. MDX Astro Blog
+
+The system should be trustworthy, source-aware, reproducible, and extensible.
+
+---
+
+## 3. Primary Use Cases
+
+### Use Case A: Quick Digest
+User sends:
+`digest https://...`
+
+System returns:
+- concise high-signal summary
+- why it matters
+- optional physician-builder angle
+
+### Use Case B: Archival Filing
+User sends:
+`file https://...`
+or
+`file PMID:12345678`
+
+System returns:
+- confirmation that source was archived
+- saved metadata
+- normalized text
+- storage path or slug
+
+### Use Case C: Structured Summary
+User sends:
+`summarize https://...`
+
+System returns:
+- structured summary
+- key claims
+- evidence
+- limitations
+- possible reuse in Doctors Who Code / CodeCraftMD / OpenMFM
+
+### Use Case D: Full MDX Blog Draft
+User sends:
+`mdx https://...`
+
+System returns and saves:
+- frontmatter
+- title
+- subtitle or dek if needed
+- publication-ready MDX draft
+- section headings
+- conclusion
+- optional callout blocks
+- optional “Why this matters for physician-builders” section
+
+### Use Case E: Audio to Insight
+User sends:
+- audio note
+- transcribed speech
+- pasted transcript
+
+System routes through:
+- transcription layer if needed
+- normalization
+- command mode
+- output renderer
+
+---
+
+## 4. Core Design Principle
+
+All inputs must first be normalized into a shared internal object before any summarization or drafting occurs.
+
+The system must never treat all sources as equivalent.
+
+For example:
+- a PubMed abstract is not the same as a full paper
+- a YouTube transcript is not the same as a peer-reviewed article
+- an audio transcription may contain uncertainty
+- webpage extraction may be partial or noisy
+
+The output must reflect what source material was actually available.
+
+---
+
+## 5. Functional Requirements
+
+### 5.1 Input Adapters
+The system must accept and process:
+- Telegram text messages
+- URLs
+- PubMed IDs
+- PubMed URLs
+- pasted transcripts
+- pasted article text
+- transcribed audio text
+- optional uploaded files in future versions
+
+### 5.2 Intent Parsing
+The system must detect and map user commands to one of the following modes:
+- digest
+- file
+- summarize
+- mdx
+
+The system may support aliases, but internally everything must map to one of these four canonical modes.
+
+### 5.3 Source Classification
+The system must classify source type as one of:
+- text
+- webpage
+- pubmed
+- research_article
+- transcript
+- audio_transcript
+- unknown
+
+### 5.4 Normalization
+The system must create a normalized internal record containing:
+- source_type
+- source_reference
+- raw_input
+- normalized_text
+- title
+- authors if available
+- publication or platform if available
+- date if available
+- completeness flag
+- requested_action
+- tags
+- created_at
+- source hash or unique ID
+
+### 5.5 Rendering
+The system must render outputs using mode-specific templates:
+- digest renderer
+- file renderer
+- summary renderer
+- mdx renderer
+
+### 5.6 Persistence
+The system must save results to the repo and/or a connected persistence layer.
+At minimum, save:
+- metadata JSON
+- normalized source text
+- generated output
+
+### 5.7 Telegram Response
+The system must return a useful response to Telegram, including:
+- the generated content
+- or confirmation of archive path
+- or an actionable error message
+
+---
+
+## 6. Non-Functional Requirements
+
+### 6.1 Determinism
+The system should prefer explicit mode-based workflows over vague conversational behavior.
+
+### 6.2 Auditability
+Every output must preserve provenance:
+- original source reference
+- timestamp
+- command used
+- model used
+- completeness status
+
+### 6.3 Extensibility
+New adapters and renderers must be easy to add without rewriting core logic.
+
+### 6.4 Reliability
+The system must fail gracefully when:
+- no URL is present
+- extraction fails
+- transcript is too short
+- PubMed metadata is incomplete
+- output exceeds Telegram response limits
+
+### 6.5 File-First Architecture
+The repo is the source of truth. Generated work must be saved in structured folders rather than existing only in chat responses.
+
+---
+
+## 7. Command Grammar
+
+Canonical commands:
+
+- `digest <input>`
+- `file <input>`
+- `summarize <input>`
+- `mdx <input>`
+
+Examples:
+- `digest https://example.com/article`
+- `file PMID:12345678`
+- `summarize pasted transcript here`
+- `mdx https://pubmed.ncbi.nlm.nih.gov/...`
+
+Natural-language aliases may be supported, but canonical command parsing is preferred.
+
+---
+
+## 8. Output Definitions
+
+### 8.1 Digest Output
+Purpose:
+Fast, high-signal synthesis.
+
+Expected sections:
+- Core takeaway
+- 3 to 5 key points
+- Why it matters
+- Optional physician-builder angle
+
+### 8.2 File Output
+Purpose:
+Archive source for future retrieval.
+
+Expected artifacts:
+- metadata JSON
+- normalized source text
+- short abstract or note
+- storage path confirmation
+
+### 8.3 Summary Output
+Purpose:
+Detailed structured understanding.
+
+Expected sections:
+- Overview
+- Core claims
+- Evidence and reasoning
+- Limitations
+- Practical implications
+- Reuse opportunities
+
+### 8.4 MDX Output
+Purpose:
+Create publishable Astro content.
+
+Expected artifacts:
+- `.mdx` file
+- frontmatter
+- title
+- slug
+- tags
+- structured body
+- conclusion
+- optional CTA or framing section
+
+---
+
+## 9. Suggested Repo Structure
+
+```text
+research-agent/
+  README.md
+  PRD-research-agent.md
+  package.json
+  railway.json
+  .env.example
+
+  src/
+    server.ts
+    config.ts
+    types.ts
+
+    telegram/
+      webhook.ts
+      router.ts
+      parseCommand.ts
+
+    ingest/
+      text.ts
+      url.ts
+      pubmed.ts
+      transcript.ts
+      audio.ts
+
+    normalize/
+      normalizeInput.ts
+      buildRecord.ts
+
+    actions/
+      digest.ts
+      file.ts
+      summarize.ts
+      mdx.ts
+
+    render/
+      markdown.ts
+      mdx.ts
+      telegram.ts
+      json.ts
+
+    storage/
+      fs.ts
+      github.ts
+      slugify.ts
+      hashes.ts
+
+    llm/
+      openai.ts
+      prompts.ts
+
+    utils/
+      dates.ts
+      logging.ts
+      errors.ts
+
+  prompts/
+    digest.md
+    file.md
+    summarize.md
+    mdx.md
+
+  configs/
+    modes.json
+    taxonomy.json
+
+  archive/
+    records/
+    sources/
+    transcripts/
+    summaries/
+
+  content/
+    blog/
+
+  tests/
+````
+
+---
+
+## 10. Internal Record Schema
+
+```json
+{
+  "id": "unique-stable-id",
+  "source_type": "webpage",
+  "source_reference": "https://example.com/article",
+  "raw_input": "original user message or extracted content",
+  "normalized_text": "cleaned text body",
+  "title": "Example Title",
+  "authors": ["Author One"],
+  "publication": "Journal or Site Name",
+  "date": "2026-04-01",
+  "completeness": "full_text | abstract_only | transcript_only | partial | unknown",
+  "requested_action": "digest",
+  "tags": ["ai", "medicine"],
+  "created_at": "2026-04-01T12:00:00Z",
+  "model": "gpt-5",
+  "status": "processed"
+}
+```
+
+---
+
+## 11. Execution Flow
+
+1. Receive Telegram message
+2. Parse command and source input
+3. Detect source type
+4. Ingest source using appropriate adapter
+5. Normalize into shared record
+6. Route to renderer based on requested action
+7. Generate output
+8. Save artifacts to repo/local storage
+9. Return response to Telegram
+10. Log run metadata
+
+---
+
+## 12. Error Handling Requirements
+
+The system must return explicit, useful errors for:
+
+* missing command
+* unsupported source type
+* no extractable content
+* failed transcription
+* failed PubMed lookup
+* model timeout
+* persistence failure
+
+The system should never silently fail.
+
+---
+
+## 13. Version 1 Scope
+
+Include:
+
+* Telegram text command input
+* URLs
+* PubMed IDs / PubMed URLs
+* pasted text
+* pasted transcripts
+* digest
+* file
+* summarize
+* mdx
+* repo-based persistence
+* Railway deployment
+* GitHub-backed source control
+
+Exclude from V1:
+
+* automatic YouTube transcript fetching
+* direct audio upload processing
+* multi-user auth
+* web dashboard
+* semantic search over archive
+* auto-publish to production blog
+
+---
+
+## 14. Version 2 Scope
+
+Add:
+
+* transcription pipeline for audio
+* transcript confidence flags
+* improved metadata extraction
+* duplicate detection
+* smarter tagging
+* optional GitHub Actions for post-processing
+
+---
+
+## 15. Version 3 Scope
+
+Add:
+
+* YouTube transcript ingestion
+* PDF support
+* semantic retrieval over archived items
+* editorial review workflow
+* optional publishing pipeline into Astro content collections
+
+---
+
+## 16. Success Criteria
+
+The system is successful if the user can:
+
+1. send a command plus source from Telegram,
+2. receive a reliable output in the requested mode,
+3. find the archived artifacts in the repo,
+4. reuse the MDX content directly in Astro,
+5. trust that the system distinguishes between partial and complete sources.
+
+---
+
+## 17. Editorial Standards
+
+The system should:
+
+* avoid hype
+* preserve source distinctions
+* be explicit when information is incomplete
+* produce clean, readable Markdown / MDX
+* favor clarity over ornament
+* support physician-builder framing when appropriate
+
+---
+
+## 18. Build Philosophy
+
+This system should behave like a disciplined research assistant, not a noisy autonomous agent.
+
+Priority order:
+
+1. correctness of source handling
+2. clarity of output
+3. reproducibility
+4. extensibility
+5. speed
+
+---
+
+## 19. Codex Working Instructions
+
+When implementing this repository:
+
+* treat this PRD as the source of truth
+* prefer small, typed modules
+* keep adapters isolated by source type
+* keep action renderers isolated by output mode
+* do not collapse everything into one prompt
+* save artifacts to files
+* write clear README setup steps
+* provide `.env.example`
+* keep Railway deployment simple
+* write code that can run locally first
+* avoid adding unnecessary frameworks
+* optimize for maintainability and traceability
+
+---
+
+## 20. Immediate Deliverables
+
+Build these first:
+
+1. Telegram message parser
+2. URL and PubMed adapters
+3. normalized record builder
+4. digest renderer
+5. summarize renderer
+6. mdx renderer
+7. file persistence layer
+8. Railway-ready deployment
+
+````
+
+And here is a second file I would place beside it as `PROJECT-BRIEF.md`. This is shorter and more operational for Codex to act on.
+
+```markdown
+# Project Brief for Codex
+
+Build a Telegram-driven research ingestion system for Dr. Chukwuma Onyeije.
+
+The system must accept command-based inputs such as:
+- digest
+- file
+- summarize
+- mdx
+
+The system must support:
+- URLs
+- PubMed IDs / PubMed URLs
+- pasted text
+- pasted transcripts
+- future audio transcription input
+
+The repo must be file-first, modular, and maintainable.
+
+Key constraints:
+- No n8n
+- Local repo as source of truth
+- GitHub for version control and persistence
+- Railway for deployment
+- Telegram as primary interface
+- Astro-compatible MDX output
+
+Key architectural rule:
+All source inputs must be normalized before rendering output.
+
+Key implementation rule:
+Do not build one giant “summarize everything” prompt.
+Instead, build adapters by source type and renderers by output mode.
+
+Initial priority:
+1. working Telegram command router
+2. URL ingestion
+3. PubMed ingestion
+4. digest / summarize / mdx outputs
+5. file persistence
+6. local-first development
+7. Railway deployment
+
+Definition of done for V1:
+- I can send `digest <url>` and get a reliable response
+- I can send `file <pubmed id>` and archive it
+- I can send `mdx <url>` and generate a clean Astro-ready draft
+- the output is saved in predictable repo folders
+````
+
+The most important live facts behind this recommendation are that the Codex app is built for multi-agent coding workflows, supports reusable workflow packaging through skills/plugins, and OpenAI recommends the Responses API for new projects and agentic integrations. ([OpenAI][1])
+
+If you want, I can turn this next into a **Codex-native repo scaffold** with:
+`README.md`, `.env.example`, `configs/modes.json`, and the exact starter file tree.
+
+[1]: https://openai.com/codex/?utm_source=chatgpt.com "Codex | AI Coding Partner from OpenAI"

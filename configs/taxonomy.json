@@ -1,0 +1,18 @@
+{
+  "sourceTypes": [
+    "text",
+    "webpage",
+    "pubmed",
+    "research_article",
+    "transcript",
+    "audio_transcript",
+    "unknown"
+  ],
+  "completeness": [
+    "full_text",
+    "abstract_only",
+    "transcript_only",
+    "partial",
+    "unknown"
+  ]
+}

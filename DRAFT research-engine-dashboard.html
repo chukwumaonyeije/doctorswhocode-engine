@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeCraftMD Research Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: #1e2430;
+    --accent: #00c9a7;
+    --accent2: #3b82f6;
+    --accent3: #f59e0b;
+    --warn: #ef4444;
+    --text: #e8eaf0;
+    --muted: #5a6275;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+    --serif: 'Instrument Serif', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,201,167,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,201,167,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-area h1 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .logo-area h2 {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-area h2 em {
+    font-style: italic;
+    font-family: var(--serif);
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,201,167,0.08);
+    border: 1px solid rgba(0,201,167,0.2);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  /* Pipeline diagram */
+  .pipeline-section {
+    margin-bottom: 40px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow-x: auto;
+  }
+
+  .pipeline-node {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 80px;
+  }
+
+  .node-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    border: 1px solid;
+    position: relative;
+    transition: transform 0.2s;
+  }
+
+  .node-icon:hover { transform: translateY(-2px); }
+
+  .node-icon.telegram { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+  .node-icon.router { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
+  .node-icon.extractor { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); }
+  .node-icon.claude { background: rgba(0,201,167,0.12); border-color: rgba(0,201,167,0.3); }
+  .node-icon.parser { background: rgba(236,72,153,0.12); border-color: rgba(236,72,153,0.3); }
+  .node-icon.github { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+  .node-icon.output { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+
+  .node-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .pipe-arrow {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    color: var(--border);
+    font-size: 18px;
+    padding: 0 4px;
+  }
+
+  /* Setup grid */
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 700px) {
+    .setup-grid { grid-template-columns: 1fr; }
+    header { flex-direction: column; gap: 16px; }
+  }
+
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .setup-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .setup-card.step-1::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .setup-card.step-2::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .setup-card.step-3::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .setup-card.step-4::before { background: linear-gradient(90deg, #ec4899, transparent); }
+
+  .step-number {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .step-1 .step-number { color: var(--accent2); }
+  .step-2 .step-number { color: var(--accent3); }
+  .step-3 .step-number { color: var(--accent); }
+  .step-4 .step-number { color: #ec4899; }
+
+  .setup-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .setup-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .setup-card li {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+
+  .setup-card li::before {
+    content: '→';
+    flex-shrink: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-top: 1px;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: rgba(0,201,167,0.1);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,201,167,0.15);
+  }
+
+  /* Credential table */
+  .cred-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 40px;
+  }
+
+  .cred-section h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cred-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .cred-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cred-table td {
+    padding: 12px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(30,36,48,0.5);
+    vertical-align: top;
+  }
+
+  .cred-table tr:last-child td { border-bottom: none; }
+
+  .cred-table td:first-child {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .cred-table td:nth-child(2) {
+    color: var(--muted);
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .tag.required { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+  .tag.optional { background: rgba(90,98,117,0.2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* Outputs section */
+  .outputs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 700px) {
+    .outputs-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .output-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+
+  .output-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .output-card .icon { font-size: 24px; margin-bottom: 10px; }
+  .output-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .output-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Prompt preview */
+  .prompt-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 40px;
+  }
+
+  .prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .prompt-header h3 { font-size: 13px; font-weight: 700; }
+
+  .prompt-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .prompt-tab {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--sans);
+  }
+
+  .prompt-tab.active {
+    background: rgba(0,201,167,0.12);
+    color: var(--accent);
+  }
+
+  .prompt-tab:hover:not(.active) { background: var(--border); color: var(--text); }
+
+  .prompt-body {
+    padding: 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: #8892a4;
+    white-space: pre-wrap;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .prompt-body .keyword { color: var(--accent); }
+  .prompt-body .section { color: var(--accent3); font-weight: 600; }
+  .prompt-body .comment { color: var(--muted); font-style: italic; }
+  .prompt-body .string { color: #a78bfa; }
+
+  /* Roadmap */
+  .roadmap {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 700px) {
+    .roadmap { grid-template-columns: 1fr; }
+  }
+
+  .roadmap-phase {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .phase-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .phase-1 .phase-label { color: var(--accent); }
+  .phase-2 .phase-label { color: var(--accent3); }
+  .phase-3 .phase-label { color: #ec4899; }
+
+  .roadmap-phase h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+
+  .roadmap-phase ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .roadmap-phase li {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .roadmap-phase li .check { font-size: 10px; }
+
+  /* Download bar */
+  .download-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .download-bar p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .download-bar strong { color: var(--text); }
+
+  .btn {
+    flex-shrink: 0;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: var(--sans);
+    letter-spacing: 0.02em;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover { background: #00e6be; transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .container > * {
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .container > *:nth-child(1) { animation-delay: 0s; }
+  .container > *:nth-child(2) { animation-delay: 0.05s; }
+  .container > *:nth-child(3) { animation-delay: 0.1s; }
+  .container > *:nth-child(4) { animation-delay: 0.15s; }
+  .container > *:nth-child(5) { animation-delay: 0.2s; }
+  .container > *:nth-child(6) { animation-delay: 0.25s; }
+  .container > *:nth-child(7) { animation-delay: 0.3s; }
+  .container > *:nth-child(8) { animation-delay: 0.35s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo-area">
+      <h1>CodeCraftMD</h1>
+      <h2>Research <em>Engine</em></h2>
+    </div>
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      Production Blueprint v1.0
+    </div>
+  </header>
+
+  <!-- Pipeline Diagram -->
+  <div class="pipeline-section">
+    <div class="section-label">Pipeline Architecture</div>
+    <div class="pipeline">
+      <div class="pipeline-node">
+        <div class="node-icon telegram">📱</div>
+        <div class="node-label">Telegram</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipeline-node">
+        <div class="node-icon router">🔀</div>
+        <div class="node-label">Router</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipeline-node">
+        <div class="node-icon extractor">🌐</div>
+        <div class="node-label">Jina Extractor</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipeline-node">
+        <div class="node-icon claude">🧠</div>
+        <div class="node-label">Claude</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipeline-node">
+        <div class="node-icon parser">🔍</div>
+        <div class="node-label">Parser</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipeline-node">
+        <div class="node-icon github">📁</div>
+        <div class="node-label">GitHub</div>
+      </div>
+      <div class="pipe-arrow">+</div>
+      <div class="pipeline-node">
+        <div class="node-icon output">📤</div>
+        <div class="node-label">Telegram Out</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup Steps -->
+  <div class="section-label">Setup Checklist</div>
+  <div class="setup-grid">
+    <div class="setup-card step-1">
+      <div class="step-number">Step 01 — Telegram Bot</div>
+      <h3>Create Your Bot</h3>
+      <ul>
+        <li>Open Telegram, search <code>@BotFather</code></li>
+        <li>Run <code>/newbot</code> and name it (e.g. ResearchAgentBot)</li>
+        <li>Copy the Bot Token</li>
+        <li>Add token to n8n Telegram credential</li>
+        <li>Send any message to your bot to activate the webhook</li>
+      </ul>
+    </div>
+    <div class="setup-card step-2">
+      <div class="step-number">Step 02 — n8n Setup</div>
+      <h3>Import the Workflow</h3>
+      <ul>
+        <li>Open n8n (Railway or local)</li>
+        <li>Click <code>+ New Workflow</code></li>
+        <li>Menu → Import from JSON</li>
+        <li>Paste <code>research-agent-workflow.json</code></li>
+        <li>Activate the workflow toggle</li>
+      </ul>
+    </div>
+    <div class="setup-card step-3">
+      <div class="step-number">Step 03 — Credentials</div>
+      <h3>Wire Your Keys</h3>
+      <ul>
+        <li>Add Telegram credential with your Bot Token</li>
+        <li>Add Anthropic credential with your API key</li>
+        <li>Add GitHub credential (Personal Access Token, repo scope)</li>
+        <li>Set your GitHub username and repo name in the GitHub node</li>
+        <li>Create a <code>drafts</code> branch in your blog repo</li>
+      </ul>
+    </div>
+    <div class="setup-card step-4">
+      <div class="step-number">Step 04 — Test It</div>
+      <h3>First Run</h3>
+      <ul>
+        <li>Send any article URL to your Telegram bot</li>
+        <li>Watch n8n execution panel</li>
+        <li>Expect response in 25-45 seconds</li>
+        <li>Check GitHub <code>drafts</code> branch for <code>.mdx</code> file</li>
+        <li>Review Telegram output for all 5 content blocks</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Credentials Table -->
+  <div class="cred-section">
+    <h3>🔑 Required Credentials</h3>
+    <table class="cred-table">
+      <thead>
+        <tr>
+          <th>Credential ID</th>
+          <th>What to Set</th>
+          <th>Where to Get It</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>TELEGRAM_CRED_ID</td>
+          <td>Bot Token from @BotFather</td>
+          <td>t.me/BotFather → /newbot</td>
+          <td><span class="tag required">Required</span></td>
+        </tr>
+        <tr>
+          <td>ANTHROPIC_CRED_ID</td>
+          <td>Anthropic API Key</td>
+          <td>console.anthropic.com → API Keys</td>
+          <td><span class="tag required">Required</span></td>
+        </tr>
+        <tr>
+          <td>GITHUB_CRED_ID</td>
+          <td>Personal Access Token (repo scope)</td>
+          <td>GitHub → Settings → Developer Settings → PAT</td>
+          <td><span class="tag required">Required</span></td>
+        </tr>
+        <tr>
+          <td>YOUR_GITHUB_USERNAME</td>
+          <td>Your GitHub username (edit in GitHub node)</td>
+          <td>github.com/your-username</td>
+          <td><span class="tag required">Required</span></td>
+        </tr>
+        <tr>
+          <td>OPENAI_CRED_ID</td>
+          <td>OpenAI API Key (for Whisper voice notes)</td>
+          <td>platform.openai.com → API Keys</td>
+          <td><span class="tag optional">Phase 2</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Outputs -->
+  <div class="section-label">What Gets Generated Per Run</div>
+  <div class="outputs-grid">
+    <div class="output-card">
+      <div class="icon">📊</div>
+      <h4>Executive Summary</h4>
+      <p>5 clinically-relevant bullets. Back to you in Telegram within 45 seconds.</p>
+    </div>
+    <div class="output-card">
+      <div class="icon">✍️</div>
+      <h4>MDX Blog Draft</h4>
+      <p>Full post with frontmatter. Pushed to GitHub <code>drafts</code> branch automatically.</p>
+    </div>
+    <div class="output-card">
+      <div class="icon">🩺</div>
+      <h4>Clinical Translation</h4>
+      <p>Protocol implications, SMFM/ACOG connections, decision framework notes.</p>
+    </div>
+    <div class="output-card">
+      <div class="icon">💼</div>
+      <h4>LinkedIn Post</h4>
+      <p>150-200 words. Authority tone. Ready to copy-paste.</p>
+    </div>
+    <div class="output-card">
+      <div class="icon">🐦</div>
+      <h4>Twitter Thread</h4>
+      <p>5-7 tweets, each under 280 chars. Hook to synthesis structure.</p>
+    </div>
+    <div class="output-card">
+      <div class="icon">📁</div>
+      <h4>GitHub Draft File</h4>
+      <p>Auto-named <code>YYYY-MM-DD-slug.mdx</code> with full frontmatter ready for review.</p>
+    </div>
+  </div>
+
+  <!-- Prompt Preview -->
+  <div class="prompt-section">
+    <div class="prompt-header">
+      <h3>🔥 Master Prompt — Claude Writing Engine</h3>
+      <div class="prompt-tabs">
+        <button class="prompt-tab active" onclick="showPrompt('master')">Master</button>
+        <button class="prompt-tab" onclick="showPrompt('voice')">Voice Rules</button>
+      </div>
+    </div>
+    <div class="prompt-body" id="prompt-display"><span class="comment"># System Identity</span>
+You are the writing engine for <span class="string">DoctorsWhoCode.blog</span>.
+Author: <span class="keyword">Dr. Chukwuma Onyeije MD</span> — MFM specialist, physician-developer.
+
+<span class="section">=== OUTPUT STRUCTURE ===</span>
+
+<span class="keyword">1. EXECUTIVE_SUMMARY</span>
+   5 bullets. Clinically relevant. Finding first, methodology second.
+
+<span class="keyword">2. BLOG_POST</span>
+   Title → Hook → Core Argument → 3-5 Sections
+   → "Why this matters for physician-builders"
+   → Strong clinical or builder closing
+   Length: 600-900 words. Zero fluff.
+
+<span class="keyword">3. CLINICAL_TRANSLATION</span>
+   Protocol implications | Decision frameworks
+   Risk/bias considerations | SMFM/ACOG connections
+
+<span class="keyword">4. LINKEDIN_POST</span>
+   150-200 words | Authority tone | 1-2 emojis max
+   Hook sentence physicians stop scrolling for.
+
+<span class="keyword">5. TWITTER_THREAD</span>
+   5-7 tweets | Each &lt;280 chars | Numbered 1/ through 7/
+   Hook → Evidence → Synthesis → CTA</div>
+  </div>
+
+  <!-- Roadmap -->
+  <div class="section-label">Build Roadmap</div>
+  <div class="roadmap">
+    <div class="roadmap-phase phase-1">
+      <div class="phase-label">Phase 1 — Now</div>
+      <h4>Core Pipeline</h4>
+      <ul>
+        <li><span class="check">→</span> Telegram trigger</li>
+        <li><span class="check">→</span> Jina.ai extraction</li>
+        <li><span class="check">→</span> Claude multi-output</li>
+        <li><span class="check">→</span> GitHub draft push</li>
+        <li><span class="check">→</span> Telegram response</li>
+      </ul>
+    </div>
+    <div class="roadmap-phase phase-2">
+      <div class="phase-label">Phase 2 — Next</div>
+      <h4>Intelligence Layer</h4>
+      <ul>
+        <li><span class="check">→</span> Whisper voice notes</li>
+        <li><span class="check">→</span> PDF ingestion</li>
+        <li><span class="check">→</span> PubMed API connector</li>
+        <li><span class="check">→</span> Notion knowledge base</li>
+        <li><span class="check">→</span> Topic memory store</li>
+      </ul>
+    </div>
+    <div class="roadmap-phase phase-3">
+      <div class="phase-label">Phase 3 — Advanced</div>
+      <h4>Full Automation</h4>
+      <ul>
+        <li><span class="check">→</span> Auto-post to blog</li>
+        <li><span class="check">→</span> Weekly digest email</li>
+        <li><span class="check">→</span> Podcast script output</li>
+        <li><span class="check">→</span> Slide deck generation</li>
+        <li><span class="check">→</span> Beehiiv integration</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Download -->
+  <div class="download-bar">
+    <p><strong>research-agent-workflow.json</strong> is ready to import directly into n8n. Update the 3 credential IDs and your GitHub username — that's it. The pipeline runs on first message.</p>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="copyInstructions()">Copy Setup Notes</button>
+      <button class="btn btn-primary" onclick="alert('Import research-agent-workflow.json into n8n via Menu → Import from JSON')">Import Instructions</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showPrompt(tab) {
+  document.querySelectorAll('.prompt-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const display = document.getElementById('prompt-display');
+
+  if (tab === 'voice') {
+    display.innerHTML = `<span class="comment"># Voice Rules — NON-NEGOTIABLE</span>
+
+<span class="keyword">NEVER USE:</span>
+  <span class="warn">✗</span> Em-dashes (use periods or colons instead)
+  <span class="warn">✗</span> "delve", "leverage", "robust", "game-changer"
+  <span class="warn">✗</span> "it's worth noting", "in conclusion"
+  <span class="warn">✗</span> Passive voice constructions
+  <span class="warn">✗</span> Paragraphs longer than 3 sentences
+
+<span class="keyword">ALWAYS USE:</span>
+  <span class="section">✓</span> First-person active voice
+  <span class="section">✓</span> Short declarative paragraphs
+  <span class="section">✓</span> Physician precision over literary flair
+  <span class="section">✓</span> Builder mindset: "what can I BUILD with this?"
+  <span class="section">✓</span> Intellectual seriousness without preachiness
+
+<span class="comment"># Tone: Physician-developer. Not a blogger.
+# Audience: Physicians who build.
+# Mission: Logs before intelligence.</span>`;
+  } else {
+    display.innerHTML = `<span class="comment"># System Identity</span>
+You are the writing engine for <span class="string">DoctorsWhoCode.blog</span>.
+Author: <span class="keyword">Dr. Chukwuma Onyeije MD</span> — MFM specialist, physician-developer.
+
+<span class="section">=== OUTPUT STRUCTURE ===</span>
+
+<span class="keyword">1. EXECUTIVE_SUMMARY</span>
+   5 bullets. Clinically relevant. Finding first, methodology second.
+
+<span class="keyword">2. BLOG_POST</span>
+   Title → Hook → Core Argument → 3-5 Sections
+   → "Why this matters for physician-builders"
+   → Strong clinical or builder closing
+   Length: 600-900 words. Zero fluff.
+
+<span class="keyword">3. CLINICAL_TRANSLATION</span>
+   Protocol implications | Decision frameworks
+   Risk/bias considerations | SMFM/ACOG connections
+
+<span class="keyword">4. LINKEDIN_POST</span>
+   150-200 words | Authority tone | 1-2 emojis max
+   Hook sentence physicians stop scrolling for.
+
+<span class="keyword">5. TWITTER_THREAD</span>
+   5-7 tweets | Each &lt;280 chars | Numbered 1/ through 7/
+   Hook → Evidence → Synthesis → CTA`;
+  }
+}
+
+function copyInstructions() {
+  const text = `CodeCraftMD Research Engine — Setup Notes
+
+1. Import research-agent-workflow.json into n8n (Menu → Import from JSON)
+2. Add Telegram credential: Bot Token from @BotFather
+3. Add Anthropic credential: API key from console.anthropic.com
+4. Add GitHub credential: Personal Access Token (repo scope)
+5. Edit GitHub node: set your username and repo name
+6. Create 'drafts' branch in your blog repo
+7. Activate the workflow
+8. Send any URL to your Telegram bot to test
+
+Expected output: Executive summary + LinkedIn + Twitter thread in Telegram.
+MDX draft auto-pushed to GitHub drafts/YYYY-MM-DD-slug.mdx`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy Setup Notes', 2000);
+  });
+}
+</script>
+</body>
+</html>
