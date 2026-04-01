@@ -16,12 +16,15 @@ const { Pool } = require("pg") as {
 };
 
 let pool: PoolInstance | null = null;
+let databaseReady = false;
 
 function getPool(): PoolInstance {
   if (!pool) {
     requireConfigValue(config.databaseUrl, "DATABASE_URL");
     pool = new Pool({
       connectionString: config.databaseUrl,
+      connectionTimeoutMillis: 10000,
+      idleTimeoutMillis: 10000,
       ssl: config.databaseUrl.includes("localhost")
         ? false
         : {
@@ -63,9 +66,14 @@ export async function ensureDatabase(): Promise<void> {
         updated_at timestamptz not null default now()
       )
     `);
+    databaseReady = true;
   } finally {
     client.release();
   }
+}
+
+export function isDatabaseReady(): boolean {
+  return databaseReady;
 }
 
 export async function persistRecord(payload: PersistedRecordPayload): Promise<void> {

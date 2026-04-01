@@ -1,6 +1,6 @@
 import express from "express";
 import { config } from "./config";
-import { ensureDatabase } from "./storage/db";
+import { ensureDatabase, isDatabaseReady } from "./storage/db";
 import { ensureStorageStructure } from "./storage/fs";
 import { handleIncomingText } from "./telegram/router";
 import { handleTelegramUpdate } from "./telegram/webhook";
@@ -8,7 +8,6 @@ import { logError, logInfo } from "./utils/logging";
 
 async function startServer(): Promise<void> {
   await ensureStorageStructure();
-  await ensureDatabase();
 
   const app = express();
   app.use(express.json({ limit: "10mb" }));
@@ -17,7 +16,8 @@ async function startServer(): Promise<void> {
     response.json({
       ok: true,
       service: "telegram-to-astro-research-agent",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      databaseReady: isDatabaseReady()
     });
   });
 
@@ -65,6 +65,18 @@ async function startServer(): Promise<void> {
       baseUrl: config.baseUrl
     });
   });
+
+  logInfo("database_init_started");
+  ensureDatabase()
+    .then(() => {
+      logInfo("database_init_completed");
+    })
+    .catch((error) => {
+      logError("database_init_failed", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+    });
 }
 
 startServer().catch((error) => {
