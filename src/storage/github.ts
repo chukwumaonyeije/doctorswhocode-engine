@@ -68,5 +68,16 @@ function buildHeaders(): Record<string, string> {
 }
 
 function toRepoRelativePath(filePath: string): string {
-  return filePath.replace(`${process.cwd()}\\`, "").replace(/\\/g, "/");
+  const normalized = filePath.replace(/\\/g, "/");
+  const cwdNormalized = process.cwd().replace(/\\/g, "/");
+
+  if (normalized.startsWith(`${cwdNormalized}/`)) {
+    return normalized.slice(cwdNormalized.length + 1);
+  }
+
+  if (normalized.startsWith("/app/")) {
+    return normalized.slice("/app/".length);
+  }
+
+  return normalized.replace(/^\/+/, "");
 }
