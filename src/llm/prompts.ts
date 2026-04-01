@@ -18,6 +18,7 @@ export async function loadPrompt(action: CanonicalAction): Promise<string> {
 export async function buildActionPrompt(action: CanonicalAction, record: NormalizedRecord): Promise<string> {
   const basePrompt = await loadPrompt(action);
   const sourceAwareInstructions = buildSourceAwareInstructions(record);
+  const voiceInstructions = buildVoiceInstructions(action, record);
   const serializedRecord = JSON.stringify(
     {
       id: record.id,
@@ -43,6 +44,7 @@ export async function buildActionPrompt(action: CanonicalAction, record: Normali
   return [
     basePrompt.trim(),
     sourceAwareInstructions,
+    voiceInstructions,
     "",
     "Record metadata:",
     serializedRecord,
@@ -70,4 +72,30 @@ function buildSourceAwareInstructions(record: NormalizedRecord): string {
   }
 
   return "";
+}
+
+function buildVoiceInstructions(action: CanonicalAction, record: NormalizedRecord): string {
+  if (action !== "mdx") {
+    return "";
+  }
+
+  const wantsPublishableOutput =
+    record.tags.includes("publishable_output") ||
+    record.metadata.intentLabel === "publish_request" ||
+    record.metadata.intentLabel === "mdx_from_record" ||
+    record.metadata.intentLabel === "compound_analyze_and_draft";
+
+  if (!wantsPublishableOutput) {
+    return "";
+  }
+
+  return [
+    "Write for DoctorsWhoCode.blog.",
+    "Use first person when a direct physician-builder perspective strengthens the argument.",
+    "Keep paragraphs short.",
+    "Prefer clear declarative sentences over balanced committee language.",
+    "Name what is structurally broken, explain why it persists, and show what changes when physicians build.",
+    "Do not sound like a generic medical explainer or a corporate AI blog.",
+    "If evidence is partial, state the limit plainly but keep the argument strong and readable."
+  ].join("\n");
 }
