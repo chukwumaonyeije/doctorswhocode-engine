@@ -191,8 +191,15 @@ function wrapText(text: string, font: PDFFontLike, fontSize: number, maxWidth: n
   return lines.length > 0 ? lines : [text];
 }
 
-function sanitizePdfText(text: string): string {
-  return text
+function sanitizePdfText(text: unknown): string {
+  const safeText =
+    text === null || text === undefined
+      ? ""
+      : typeof text === "string"
+        ? text
+        : String(text);
+
+  return safeText
     .normalize("NFKD")
     .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-")
     .replace(/[\u2018\u2019]/g, "'")
