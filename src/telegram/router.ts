@@ -3,7 +3,7 @@ import { config } from "../config";
 import { exportRecordPdf } from "../export/pdf";
 import { ingestInputWithOptions } from "../ingest";
 import { buildRecord } from "../normalize/normalizeInput";
-import { ensureDatabase, fetchRecentRecords, fetchRecordById, searchRecords } from "../storage/db";
+import { ensureDatabase, fetchRecentRecords, fetchRecordById, searchRecords, updateRecordCurationStatus } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
 import type { ActionArtifacts, AppAction, CanonicalAction, ParsedCommand } from "../types";
 import { AppError } from "../utils/errors";
@@ -33,6 +33,10 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
 
   if (parsed.action === "pdf" && parsed.intentLabel === "pdf_from_record") {
     return handlePdfFromRecord(parsed.input);
+  }
+
+  if (parsed.action === "curate" && parsed.curationOptions) {
+    return handleCurationUpdate(parsed);
   }
 
   const action = parsed.action as CanonicalAction;
@@ -151,6 +155,7 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
       reply: [
         `Saved analysis: ${record.id}`,
         `Title: ${record.title ?? "Untitled"}`,
+        `Curation status: ${record.curationStatus ?? "new"}`,
         `Source type: ${record.sourceType}`,
         `Action: ${record.requestedAction}`,
         `Created: ${record.createdAt}`,
@@ -168,7 +173,8 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
     const matches = await searchRecords({
       query,
       limit: parsed.retrievalOptions?.limit,
-      sourceType: parsed.retrievalOptions?.sourceType
+      sourceType: parsed.retrievalOptions?.sourceType,
+      curationStatus: parsed.retrievalOptions?.curationStatus
     });
 
     if (matches.length === 0) {
@@ -180,12 +186,12 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
     }
 
     const lines = matches.map((item) =>
-      `- ${item.id} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
+      `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
     );
 
     return {
       reply: [
-        `Search results for "${query}"${parsed.retrievalOptions?.sourceType ? ` (${parsed.retrievalOptions.sourceType})` : ""}:`,
+        `Search results for "${query}"${formatListFilters(parsed)}:`,
         ...lines
       ].join("\n"),
       output: lines.join("\n"),
@@ -195,7 +201,8 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
 
   const recent = await fetchRecentRecords({
     limit: parsed.retrievalOptions?.limit,
-    sourceType: parsed.retrievalOptions?.sourceType
+    sourceType: parsed.retrievalOptions?.sourceType,
+    curationStatus: parsed.retrievalOptions?.curationStatus
   });
 
   if (recent.length === 0) {
@@ -207,17 +214,51 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
   }
 
   const lines = recent.map((item) =>
-    `- ${item.id} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
+    `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
   );
 
   return {
     reply: [
-      `Recent saved analyses${parsed.retrievalOptions?.sourceType ? ` (${parsed.retrievalOptions.sourceType})` : ""}:`,
+      `Recent saved analyses${formatListFilters(parsed)}:`,
       ...lines
     ].join("\n"),
     output: lines.join("\n"),
     savedPaths: []
   };
+}
+
+async function handleCurationUpdate(parsed: ParsedCommand): Promise<ActionArtifacts> {
+  const recordId = parsed.curationOptions!.recordId;
+  const status = parsed.curationOptions!.status;
+  const updated = await updateRecordCurationStatus(recordId, status);
+
+  if (!updated) {
+    throw new AppError(`No saved analysis found for record ID ${recordId}.`);
+  }
+
+  return {
+    reply: [
+      "Curation status updated.",
+      `Record ID: ${updated.id}`,
+      `Title: ${updated.title ?? "Untitled"}`,
+      `Status: ${updated.curationStatus}`
+    ].join("\n"),
+    output: updated.curationStatus,
+    savedPaths: [],
+    recordId: updated.id
+  };
+}
+
+function formatListFilters(parsed: ParsedCommand): string {
+  const filters: string[] = [];
+  if (parsed.retrievalOptions?.sourceType) {
+    filters.push(parsed.retrievalOptions.sourceType);
+  }
+  if (parsed.retrievalOptions?.curationStatus) {
+    filters.push(parsed.retrievalOptions.curationStatus);
+  }
+
+  return filters.length > 0 ? ` (${filters.join(", ")})` : "";
 }
 
 function isRetrievalAction(action: AppAction | undefined): action is "retrieve" | "recent" | "search" {

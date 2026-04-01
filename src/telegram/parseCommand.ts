@@ -1,5 +1,5 @@
 import modes from "../../configs/modes.json";
-import type { AppAction, CanonicalAction, ParsedCommand, SourceType } from "../types";
+import type { AppAction, CanonicalAction, CurationStatus, ParsedCommand, SourceType } from "../types";
 
 const aliasMap = new Map<string, CanonicalAction>();
 const orderedAliases: string[] = [];
@@ -263,12 +263,29 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     };
   }
 
+  const markMatch = text.match(/^(?:mark|set)\s+([a-f0-9]{8,32})\s+(new|reviewed|drafted|publish_ready|publish-ready|archived)$/i);
+  if (markMatch) {
+    return {
+      valid: true,
+      action: "curate",
+      input: markMatch[1],
+      intentLabel: "curation_update",
+      rawRequest: text,
+      analysisMode: "default",
+      curationOptions: {
+        recordId: markMatch[1],
+        status: normalizeCurationStatus(markMatch[2])!
+      }
+    };
+  }
+
   const searchMatch = text.match(/^(?:find|search)\s+(.+)$/i);
   if (searchMatch) {
     const rawTerms = searchMatch[1].trim();
     const parts = rawTerms.split(/\s+/);
     let limit: number | undefined;
     let sourceType: SourceType | undefined;
+    let curationStatus: CurationStatus | undefined;
     const queryParts: string[] = [];
 
     for (const part of parts) {
@@ -280,6 +297,12 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
       const normalized = normalizeSourceType(part);
       if (!sourceType && normalized) {
         sourceType = normalized;
+        continue;
+      }
+
+      const normalizedStatus = normalizeCurationStatus(part);
+      if (!curationStatus && normalizedStatus) {
+        curationStatus = normalizedStatus;
         continue;
       }
 
@@ -304,6 +327,7 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
       retrievalOptions: {
         limit,
         sourceType,
+        curationStatus,
         query
       }
     };
@@ -313,6 +337,7 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     const parts = text.trim().split(/\s+/).slice(1);
     let limit: number | undefined;
     let sourceType: SourceType | undefined;
+    let curationStatus: CurationStatus | undefined;
 
     for (const part of parts) {
       if (!limit && /^\d+$/.test(part)) {
@@ -323,6 +348,12 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
       const normalized = normalizeSourceType(part);
       if (normalized) {
         sourceType = normalized;
+        continue;
+      }
+
+      const normalizedStatus = normalizeCurationStatus(part);
+      if (normalizedStatus) {
+        curationStatus = normalizedStatus;
       }
     }
 
@@ -335,7 +366,8 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
       analysisMode: "default",
       retrievalOptions: {
         limit,
-        sourceType
+        sourceType,
+        curationStatus
       }
     };
   }
@@ -356,4 +388,10 @@ function normalizeSourceType(value: string): SourceType | undefined {
   ];
 
   return allowed.includes(normalized as SourceType) ? (normalized as SourceType) : undefined;
+}
+
+function normalizeCurationStatus(value: string): CurationStatus | undefined {
+  const normalized = value.toLowerCase().replace(/-/g, "_");
+  const allowed: CurationStatus[] = ["new", "reviewed", "drafted", "publish_ready", "archived"];
+  return allowed.includes(normalized as CurationStatus) ? (normalized as CurationStatus) : undefined;
 }
