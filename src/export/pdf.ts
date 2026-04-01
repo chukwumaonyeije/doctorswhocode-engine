@@ -107,7 +107,7 @@ async function buildPdfBytes(input: PdfExportInput): Promise<Uint8Array> {
     cursorY -= spacingAfter;
   };
 
-  drawParagraph(input.title, {
+  drawParagraph(sanitizePdfText(input.title), {
     font: boldFont,
     size: titleFontSize,
     color: rgb(0.08, 0.08, 0.08),
@@ -115,11 +115,11 @@ async function buildPdfBytes(input: PdfExportInput): Promise<Uint8Array> {
   });
 
   const metaLines = [
-    `Record ID: ${input.id}`,
-    `Source type: ${input.sourceType}`,
-    `Action: ${input.requestedAction}`,
-    `Created: ${input.createdAt}`,
-    `Source reference: ${input.sourceReference}`
+    `Record ID: ${sanitizePdfText(input.id)}`,
+    `Source type: ${sanitizePdfText(input.sourceType)}`,
+    `Action: ${sanitizePdfText(input.requestedAction)}`,
+    `Created: ${sanitizePdfText(input.createdAt)}`,
+    `Source reference: ${sanitizePdfText(input.sourceReference)}`
   ];
 
   for (const line of metaLines) {
@@ -132,7 +132,7 @@ async function buildPdfBytes(input: PdfExportInput): Promise<Uint8Array> {
 
   cursorY -= 10;
 
-  const blocks = input.body
+  const blocks = sanitizePdfText(input.body)
     .split("\n\n")
     .map((block) => block.trim())
     .filter(Boolean);
@@ -189,4 +189,15 @@ function wrapText(text: string, font: PDFFontLike, fontSize: number, maxWidth: n
   }
 
   return lines.length > 0 ? lines : [text];
+}
+
+function sanitizePdfText(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2026/g, "...")
+    .replace(/\u00A0/g, " ")
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, "");
 }
