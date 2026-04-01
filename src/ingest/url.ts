@@ -1,16 +1,57 @@
 import axios from "axios";
+import { AppError } from "../utils/errors";
 import type { IngestedSource, SourceType } from "../types";
 
 export async function ingestUrl(url: string): Promise<IngestedSource> {
   const cleanUrl = `https://r.jina.ai/http://${url.replace(/^https?:\/\//, "")}`;
-  const response = await axios.get<string>(cleanUrl, {
-    headers: { Accept: "text/plain" },
-    timeout: 30000
-  });
+  let response;
+
+  try {
+    response = await axios.get<string>(cleanUrl, {
+      headers: { Accept: "text/plain" },
+      timeout: 30000
+    });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status;
+
+      if (statusCode === 451) {
+        throw new AppError(
+          "This page could not be extracted because the source or proxy blocked access (HTTP 451). Try pasting the text directly or using a different source URL."
+        );
+      }
+
+      if (statusCode === 403) {
+        throw new AppError(
+          "This page blocked extraction access (HTTP 403). Try pasting the text directly or using another link."
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new AppError("That URL could not be found (HTTP 404). Check the link and try again.");
+      }
+
+      if (error.code === "ECONNABORTED") {
+        throw new AppError(
+          "The page extraction request timed out. Try again, paste the text directly, or use a shorter source page."
+        );
+      }
+
+      throw new AppError(
+        `This page could not be extracted${statusCode ? ` (HTTP ${statusCode})` : ""}. Try pasting the text directly or using a different source URL.`
+      );
+    }
+
+    throw new AppError("An unexpected error occurred while trying to extract the webpage.");
+  }
 
   const normalizedText = response.data.trim();
   const title = extractTitle(normalizedText);
   const sourceType: SourceType = inferUrlSourceType(url);
+
+  if (!normalizedText) {
+    throw new AppError("The page was reached, but no extractable text was returned. Try pasting the text directly.");
+  }
 
   return {
     sourceType,
