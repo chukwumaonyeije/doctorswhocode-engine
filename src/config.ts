@@ -9,6 +9,7 @@ export const config: AppConfig = {
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   openAiApiKey: process.env.OPENAI_API_KEY ?? "",
   openAiModel: process.env.OPENAI_MODEL ?? "gpt-5",
+  openAiTimeoutMs: Number(process.env.OPENAI_TIMEOUT_MS ?? 120000),
   baseUrl: process.env.BASE_URL ?? "http://localhost:3000",
   databaseUrl: process.env.DATABASE_URL ?? "",
   githubToken: process.env.GITHUB_TOKEN ?? "",

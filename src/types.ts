@@ -85,6 +85,7 @@ export interface AppConfig {
   telegramBotToken: string;
   openAiApiKey: string;
   openAiModel: string;
+  openAiTimeoutMs: number;
   baseUrl: string;
   databaseUrl: string;
   githubToken: string;
