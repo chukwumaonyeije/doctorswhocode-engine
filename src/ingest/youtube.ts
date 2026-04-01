@@ -1,5 +1,6 @@
 import axios from "axios";
 import { AppError } from "../utils/errors";
+import { logInfo } from "../utils/logging";
 import type { IngestedSource } from "../types";
 
 type YoutubeTranscriptLine = {
@@ -59,6 +60,8 @@ export async function ingestYouTube(url: string): Promise<IngestedSource> {
       authorUrl: metadata.author_url,
       thumbnailUrl: metadata.thumbnail_url,
       transcriptAvailable: transcriptLines.length > 0,
+      transcriptStatus: transcriptLines.length > 0 ? "transcript_available" : "metadata_only",
+      transcriptSource: transcriptResult.source,
       transcriptFetchError: transcriptResult.error
     }
   };
@@ -112,22 +115,31 @@ async function fetchYouTubeMetadata(url: string): Promise<YouTubeOEmbedResponse>
 
 async function fetchYouTubeTranscript(
   url: string
-): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string }> {
-  try {
-    const YoutubeTranscript = await loadYoutubeTranscript();
-    const lines = await Promise.race([
-      YoutubeTranscript.fetchTranscript(url),
-      new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("YouTube transcript request timed out.")), 20000);
-      })
-    ]);
+): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
+  const attempts: string[] = [];
 
-    return { lines };
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "Transcript unavailable"
-    };
+  const primary = await fetchTranscriptWithPrimaryStrategy(url);
+  if (primary.lines?.length) {
+    return primary;
   }
+  if (primary.error) {
+    attempts.push(`primary:${primary.error}`);
+  }
+
+  const videoId = extractYouTubeVideoId(url);
+  if (videoId) {
+    const fallback = await fetchTranscriptWithFallbackStrategy(videoId);
+    if (fallback.lines?.length) {
+      return fallback;
+    }
+    if (fallback.error) {
+      attempts.push(`fallback:${fallback.error}`);
+    }
+  }
+
+  return {
+    error: attempts.length > 0 ? attempts.join(" | ") : "Transcript unavailable"
+  };
 }
 
 async function loadYoutubeTranscript(): Promise<YoutubeTranscriptApi> {
@@ -145,6 +157,101 @@ async function loadYoutubeTranscript(): Promise<YoutubeTranscriptApi> {
   }
 
   throw new AppError("YouTube transcript module could not be loaded.");
+}
+
+async function fetchTranscriptWithPrimaryStrategy(
+  url: string
+): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
+  try {
+    logInfo("youtube_transcript_attempt", {
+      strategy: "youtube-transcript"
+    });
+
+    const YoutubeTranscript = await loadYoutubeTranscript();
+    const lines = await Promise.race([
+      YoutubeTranscript.fetchTranscript(url),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("YouTube transcript request timed out.")), 20000);
+      })
+    ]);
+
+    logInfo("youtube_transcript_success", {
+      strategy: "youtube-transcript",
+      lineCount: lines.length
+    });
+
+    return {
+      lines,
+      source: "youtube-transcript"
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Primary transcript strategy failed"
+    };
+  }
+}
+
+async function fetchTranscriptWithFallbackStrategy(
+  videoId: string
+): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
+  try {
+    logInfo("youtube_transcript_attempt", {
+      strategy: "youtube-transcript-api"
+    });
+
+    const transcriptApi = await loadYoutubeTranscriptApi();
+    const transcript = await Promise.race([
+      transcriptApi.getTranscript(videoId),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Fallback transcript request timed out.")), 20000);
+      })
+    ]);
+
+    const lines = transcript.map((item) => ({
+      text: item.text,
+      offset: Number(item.offset ?? 0),
+      duration: Number(item.duration ?? 0)
+    }));
+
+    logInfo("youtube_transcript_success", {
+      strategy: "youtube-transcript-api",
+      lineCount: lines.length
+    });
+
+    return {
+      lines,
+      source: "youtube-transcript-api"
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Fallback transcript strategy failed"
+    };
+  }
+}
+
+async function loadYoutubeTranscriptApi(): Promise<{
+  getTranscript: (videoId: string) => Promise<Array<{ text: string; offset?: number; duration?: number }>>;
+}> {
+  const module = require("youtube-transcript-api") as {
+    getTranscript?: (videoId: string) => Promise<Array<{ text: string; offset?: number; duration?: number }>>;
+    default?: {
+      getTranscript?: (videoId: string) => Promise<Array<{ text: string; offset?: number; duration?: number }>>;
+    };
+  };
+
+  if (module.getTranscript) {
+    return {
+      getTranscript: module.getTranscript
+    };
+  }
+
+  if (module.default?.getTranscript) {
+    return {
+      getTranscript: module.default.getTranscript
+    };
+  }
+
+  throw new AppError("Fallback YouTube transcript API module could not be loaded.");
 }
 
 function buildMetadataOnlyText(params: {
