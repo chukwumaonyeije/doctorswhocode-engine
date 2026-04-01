@@ -25,6 +25,7 @@ export interface ParsedCommand {
   contextNote?: string;
   requestedFocus?: string[];
   rawRequest?: string;
+  analysisMode?: "default" | "youtube_fast" | "youtube_deep";
 }
 
 export interface IngestedSource {

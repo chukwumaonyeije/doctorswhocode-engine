@@ -17,6 +17,7 @@ export async function loadPrompt(action: CanonicalAction): Promise<string> {
 
 export async function buildActionPrompt(action: CanonicalAction, record: NormalizedRecord): Promise<string> {
   const basePrompt = await loadPrompt(action);
+  const sourceAwareInstructions = buildSourceAwareInstructions(record);
   const serializedRecord = JSON.stringify(
     {
       id: record.id,
@@ -32,7 +33,8 @@ export async function buildActionPrompt(action: CanonicalAction, record: Normali
       userIntent: record.metadata.userIntent,
       intentLabel: record.metadata.intentLabel,
       contextNote: record.metadata.contextNote,
-      requestedFocus: record.metadata.requestedFocus
+      requestedFocus: record.metadata.requestedFocus,
+      analysisMode: record.metadata.analysisMode
     },
     null,
     2
@@ -40,6 +42,7 @@ export async function buildActionPrompt(action: CanonicalAction, record: Normali
 
   return [
     basePrompt.trim(),
+    sourceAwareInstructions,
     "",
     "Record metadata:",
     serializedRecord,
@@ -47,4 +50,24 @@ export async function buildActionPrompt(action: CanonicalAction, record: Normali
     "Normalized source text:",
     record.normalizedText
   ].join("\n");
+}
+
+function buildSourceAwareInstructions(record: NormalizedRecord): string {
+  if (record.metadata.analysisMode === "youtube_deep") {
+    return [
+      "You are performing a deep YouTube analysis.",
+      "Use this structure:",
+      "- What this is",
+      "- Core claim",
+      "- What appears to be in the video",
+      "- Verified vs unverified",
+      "- Physician-developer takeaway",
+      "- Critical flags",
+      "- Recommended next step",
+      "If transcript text is unavailable, state clearly that the analysis is based on metadata only and do not imply full-video access.",
+      "Use the user's context note and requested focus to shape the analysis."
+    ].join("\n");
+  }
+
+  return "";
 }

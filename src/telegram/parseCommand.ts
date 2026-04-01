@@ -54,7 +54,13 @@ export function parseCommand(text: string): ParsedCommand {
     action,
     input,
     intentLabel: "canonical_command",
-    rawRequest: trimmed
+    rawRequest: trimmed,
+    analysisMode: inferAnalysisMode({
+      action,
+      input,
+      intentLabel: "canonical_command",
+      requestedFocus: []
+    })
   };
 }
 
@@ -82,7 +88,13 @@ function inferNaturalLanguageCommand(text: string): ParsedCommand | null {
     intentLabel: buildIntentLabel(lower, action),
     contextNote: extractContextNote(text, input),
     requestedFocus: inferRequestedFocus(lower),
-    rawRequest: text
+    rawRequest: text,
+    analysisMode: inferAnalysisMode({
+      action,
+      input,
+      intentLabel: buildIntentLabel(lower, action),
+      requestedFocus: inferRequestedFocus(lower)
+    })
   };
 }
 
@@ -175,4 +187,36 @@ function buildIntentLabel(text: string, action: CanonicalAction): string {
   }
 
   return `natural_language_${action}`;
+}
+
+function inferAnalysisMode(params: {
+  action: CanonicalAction;
+  input: string;
+  intentLabel?: string;
+  requestedFocus?: string[];
+}): "default" | "youtube_fast" | "youtube_deep" {
+  const isYouTube = /(youtube\.com|youtu\.be)/i.test(params.input);
+  if (!isYouTube) {
+    return "default";
+  }
+
+  const hasRichIntent =
+    params.intentLabel !== "canonical_command" ||
+    params.action === "summarize" ||
+    params.action === "mdx" ||
+    (params.requestedFocus ?? []).length > 0;
+
+  return hasRichIntent ? "youtube_deep" : "youtube_fast";
+}
+
+export function buildDeepYouTubeAcknowledgement(parsed: ParsedCommand): string | null {
+  if (parsed.analysisMode !== "youtube_deep") {
+    return null;
+  }
+
+  if (parsed.requestedFocus?.includes("physician_builder")) {
+    return "Analyzing this video now. I’m extracting what I can and will return with a deeper physician-developer reading.";
+  }
+
+  return "Analyzing this video now. I’m extracting what I can and will return with a deeper source-aware reading.";
 }

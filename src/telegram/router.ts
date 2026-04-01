@@ -3,12 +3,16 @@ import { ingestInput } from "../ingest";
 import { buildRecord } from "../normalize/normalizeInput";
 import { ensureDatabase } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
-import type { ActionArtifacts } from "../types";
+import type { ActionArtifacts, ParsedCommand } from "../types";
 import { logInfo } from "../utils/logging";
 import { parseCommand } from "./parseCommand";
 
 export async function handleIncomingText(text: string): Promise<ActionArtifacts> {
   const parsed = parseCommand(text);
+  return handleParsedCommand(parsed);
+}
+
+export async function handleParsedCommand(parsed: ParsedCommand): Promise<ActionArtifacts> {
   if (!parsed.valid || !parsed.action || !parsed.input) {
     throw new Error(parsed.error ?? "Invalid command.");
   }
@@ -28,7 +32,8 @@ export async function handleIncomingText(text: string): Promise<ActionArtifacts>
       userIntent: parsed.rawRequest,
       intentLabel: parsed.intentLabel,
       contextNote: parsed.contextNote,
-      requestedFocus: parsed.requestedFocus
+      requestedFocus: parsed.requestedFocus,
+      analysisMode: parsed.analysisMode
     },
     tags: parsed.requestedFocus ?? []
   });

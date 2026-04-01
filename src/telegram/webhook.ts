@@ -2,7 +2,8 @@ import axios from "axios";
 import { config, requireConfigValue } from "../config";
 import { chunkTelegramMessage } from "../render/telegram";
 import type { TelegramUpdate } from "../types";
-import { handleIncomingText } from "./router";
+import { handleParsedCommand } from "./router";
+import { buildDeepYouTubeAcknowledgement, parseCommand } from "./parseCommand";
 
 export async function handleTelegramUpdate(update: TelegramUpdate): Promise<void> {
   const message = update.message;
@@ -14,7 +15,18 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<void
   }
 
   try {
-    const result = await handleIncomingText(text);
+    const parsed = parseCommand(text);
+    if (!parsed.valid) {
+      await sendTelegramMessage(chatId, parsed.error ?? "Could not understand the request.");
+      return;
+    }
+
+    const acknowledgement = buildDeepYouTubeAcknowledgement(parsed);
+    if (acknowledgement) {
+      await sendTelegramMessage(chatId, acknowledgement);
+    }
+
+    const result = await handleParsedCommand(parsed);
     for (const chunk of chunkTelegramMessage(result.reply)) {
       await sendTelegramMessage(chatId, chunk);
     }
