@@ -1,4 +1,6 @@
 import axios from "axios";
+import fs from "fs/promises";
+import path from "path";
 import { config, requireConfigValue } from "../config";
 import { chunkTelegramMessage, condenseTelegramReply } from "../render/telegram";
 import type { TelegramUpdate } from "../types";
@@ -36,6 +38,11 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<void
     for (const chunk of chunkTelegramMessage(telegramReply)) {
       await sendTelegramMessage(chatId, chunk);
     }
+
+    const pdfPath = result.savedPaths.find((savedPath) => savedPath.toLowerCase().endsWith(".pdf"));
+    if (pdfPath) {
+      await sendTelegramDocument(chatId, pdfPath, `PDF export for record ${result.recordId ?? path.basename(pdfPath, ".pdf")}`);
+    }
   } catch (error) {
     const reply = error instanceof Error ? error.message : "An unexpected error occurred.";
     await sendTelegramMessage(chatId, reply);
@@ -56,4 +63,23 @@ export async function sendTelegramMessage(chatId: number, text: string): Promise
       timeout: 30000
     }
   );
+}
+
+export async function sendTelegramDocument(chatId: number, filePath: string, caption?: string): Promise<void> {
+  requireConfigValue(config.telegramBotToken, "TELEGRAM_BOT_TOKEN");
+
+  const fileBytes = await fs.readFile(filePath);
+  const form = new FormData();
+  const filename = path.basename(filePath);
+  const blob = new Blob([fileBytes], { type: "application/pdf" });
+
+  form.append("chat_id", String(chatId));
+  form.append("document", blob, filename);
+  if (caption) {
+    form.append("caption", caption);
+  }
+
+  await axios.post(`https://api.telegram.org/bot${config.telegramBotToken}/sendDocument`, form, {
+    timeout: 60000
+  });
 }
