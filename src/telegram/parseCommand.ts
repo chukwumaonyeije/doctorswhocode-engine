@@ -29,6 +29,11 @@ export function parseCommand(text: string): ParsedCommand {
     return retrievalCommand;
   }
 
+  const queueCommand = parseQueueCommand(trimmed);
+  if (queueCommand) {
+    return queueCommand;
+  }
+
   const lower = trimmed.toLowerCase();
   const matchedAlias = orderedAliases.find((alias) => lower === alias || lower.startsWith(`${alias} `));
   const action = matchedAlias ? resolveAction(matchedAlias) : resolveAction(trimmed.split(/\s+/)[0].toLowerCase());
@@ -95,7 +100,7 @@ function inferNaturalLanguageCommand(text: string): ParsedCommand | null {
     requestedFocus: inferRequestedFocus(lower),
     rawRequest: text,
     analysisMode: inferAnalysisMode({
-      action,
+      action: action === "queue" ? "mdx" : action,
       input,
       intentLabel: buildIntentLabel(lower, action),
       requestedFocus: inferRequestedFocus(lower)
@@ -103,7 +108,11 @@ function inferNaturalLanguageCommand(text: string): ParsedCommand | null {
   };
 }
 
-function inferActionFromLanguage(text: string): CanonicalAction | undefined {
+function inferActionFromLanguage(text: string): CanonicalAction | "queue" | undefined {
+  if (/\b(analy[sz]e and draft|queue for blog|queue this for blog|analy[sz]e and queue|create a blog draft and queue)\b/i.test(text)) {
+    return "queue";
+  }
+
   if (/\b(mdx|blog post|blog draft|astro blog|write a blog|turn .* into .*blog|make .*blog|article draft)\b/i.test(text)) {
     return "mdx";
   }
@@ -178,7 +187,7 @@ function inferRequestedFocus(text: string): string[] {
   return focus;
 }
 
-function buildIntentLabel(text: string, action: CanonicalAction): string {
+function buildIntentLabel(text: string, action: CanonicalAction | "queue"): string {
   if (/\b(critical flags|red flags|risks)\b/i.test(text)) {
     return "risk_review";
   }
@@ -373,6 +382,53 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
   }
 
   return null;
+}
+
+function parseQueueCommand(text: string): ParsedCommand | null {
+  const draftFromRecordMatch = text.match(/^(?:draft)\s+([a-f0-9]{8,32})$/i);
+  if (draftFromRecordMatch) {
+    return {
+      valid: true,
+      action: "mdx",
+      input: draftFromRecordMatch[1],
+      intentLabel: "mdx_from_record",
+      rawRequest: text,
+      analysisMode: "default"
+    };
+  }
+
+  const queueMatch = text.match(
+    /^(?:draft|analy[sz]e and draft|queue(?:\s+for\s+blog)?|analy[sz]e and queue|queue this for blog)\s+(.+)$/i
+  );
+  if (!queueMatch) {
+    return null;
+  }
+
+  const input = queueMatch[1].trim();
+  if (!input) {
+    return {
+      valid: false,
+      error: "Missing input. Example: draft https://example.com/article"
+    };
+  }
+
+  const requestedFocus = ["publishable_output", ...inferRequestedFocus(text)];
+
+  return {
+    valid: true,
+    action: "queue",
+    input,
+    intentLabel: "compound_analyze_and_draft",
+    contextNote: extractContextNote(text, input),
+    requestedFocus: [...new Set(requestedFocus)],
+    rawRequest: text,
+    analysisMode: inferAnalysisMode({
+      action: "mdx",
+      input,
+      intentLabel: "compound_analyze_and_draft",
+      requestedFocus
+    })
+  };
 }
 
 function normalizeSourceType(value: string): SourceType | undefined {

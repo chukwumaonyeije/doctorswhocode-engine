@@ -2,6 +2,7 @@ import { runAction } from "../actions";
 import { config } from "../config";
 import { exportRecordPdf } from "../export/pdf";
 import { ingestInputWithOptions } from "../ingest";
+import type { IngestedSource } from "../types";
 import { buildRecord } from "../normalize/normalizeInput";
 import { ensureDatabase, fetchRecentRecords, fetchRecordById, searchRecords, updateRecordCurationStatus } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
@@ -39,6 +40,10 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
     return handleCurationUpdate(parsed);
   }
 
+  if (parsed.action === "queue") {
+    return handleQueueWorkflow(parsed);
+  }
+
   const action = parsed.action as CanonicalAction;
 
   logInfo("ingest_started", { action });
@@ -67,6 +72,70 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
     intentLabel: parsed.intentLabel
   });
   return runAction(action, { record });
+}
+
+async function handleQueueWorkflow(parsed: ParsedCommand): Promise<ActionArtifacts> {
+  logInfo("ingest_started", { action: "queue" });
+  const ingested = await ingestInputWithOptions(parsed.input!, {
+    analysisMode: parsed.analysisMode
+  });
+  logInfo("ingest_completed", {
+    action: "queue",
+    sourceType: ingested.sourceType,
+    completeness: ingested.completeness
+  });
+
+  const sharedMetadata = {
+    userIntent: parsed.rawRequest,
+    intentLabel: parsed.intentLabel,
+    contextNote: parsed.contextNote,
+    requestedFocus: parsed.requestedFocus,
+    analysisMode: parsed.analysisMode,
+    compoundWorkflow: "analyze_and_draft"
+  };
+
+  const analysisRecord = buildRecord("summarize", ingested, {
+    metadata: sharedMetadata,
+    tags: [...(parsed.requestedFocus ?? []), "compound_workflow", "analysis_stage"]
+  });
+
+  logInfo("action_started", {
+    action: "summarize",
+    recordId: analysisRecord.id,
+    intentLabel: parsed.intentLabel
+  });
+  const analysisResult = await runAction("summarize", { record: analysisRecord });
+  await updateRecordCurationStatus(analysisRecord.id, "reviewed");
+
+  const mdxIngested = buildDraftIngestedSource(ingested, analysisResult.output);
+  const draftRecord = buildRecord("mdx", mdxIngested, {
+    metadata: {
+      ...sharedMetadata,
+      sourceRecordId: analysisRecord.id,
+      sourceRecordAction: "summarize"
+    },
+    tags: [...(parsed.requestedFocus ?? []), "compound_workflow", "draft_stage"]
+  });
+
+  logInfo("action_started", {
+    action: "mdx",
+    recordId: draftRecord.id,
+    intentLabel: parsed.intentLabel
+  });
+  const draftResult = await runAction("mdx", { record: draftRecord });
+  await updateRecordCurationStatus(draftRecord.id, "drafted");
+
+  return {
+    reply: [
+      "Compound workflow completed.",
+      `Analysis record: ${analysisRecord.id} (reviewed)`,
+      `Draft record: ${draftRecord.id} (drafted)`,
+      extractMdxSummary(draftResult.reply)
+    ].join("\n\n"),
+    output: draftResult.output,
+    savedPaths: [...analysisResult.savedPaths, ...draftResult.savedPaths],
+    recordId: draftRecord.id
+  };
 }
 
 async function handleMdxFromRecord(recordId: string): Promise<ActionArtifacts> {
@@ -263,4 +332,34 @@ function formatListFilters(parsed: ParsedCommand): string {
 
 function isRetrievalAction(action: AppAction | undefined): action is "retrieve" | "recent" | "search" {
   return action === "retrieve" || action === "recent" || action === "search";
+}
+
+function buildDraftIngestedSource(ingested: IngestedSource, analysisOutput: string): IngestedSource {
+  return {
+    ...ingested,
+    normalizedText: `${ingested.normalizedText}\n\nSaved analysis:\n${analysisOutput}`,
+    metadata: {
+      ...(ingested.metadata ?? {}),
+      derivedFromAnalysis: true
+    },
+    tags: [...new Set([...(ingested.tags ?? []), "derived_from_analysis"])]
+  };
+}
+
+function extractMdxSummary(reply: string): string {
+  const lines = reply
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const kept = lines.filter(
+    (line) =>
+      line === "MDX draft created." ||
+      line.startsWith("title:") ||
+      line.startsWith("dek:") ||
+      line.startsWith("Saved MDX:") ||
+      line.startsWith("GitHub draft sync:")
+  );
+
+  return kept.join("\n");
 }
