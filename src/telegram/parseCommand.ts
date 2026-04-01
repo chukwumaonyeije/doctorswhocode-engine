@@ -263,6 +263,52 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     };
   }
 
+  const searchMatch = text.match(/^(?:find|search)\s+(.+)$/i);
+  if (searchMatch) {
+    const rawTerms = searchMatch[1].trim();
+    const parts = rawTerms.split(/\s+/);
+    let limit: number | undefined;
+    let sourceType: SourceType | undefined;
+    const queryParts: string[] = [];
+
+    for (const part of parts) {
+      if (!limit && /^\d+$/.test(part)) {
+        limit = Number(part);
+        continue;
+      }
+
+      const normalized = normalizeSourceType(part);
+      if (!sourceType && normalized) {
+        sourceType = normalized;
+        continue;
+      }
+
+      queryParts.push(part);
+    }
+
+    const query = queryParts.join(" ").trim();
+    if (!query) {
+      return {
+        valid: false,
+        error: "Missing search terms. Example: find cerclage or search youtube telemetry."
+      };
+    }
+
+    return {
+      valid: true,
+      action: "search",
+      input: query,
+      intentLabel: "record_search",
+      rawRequest: text,
+      analysisMode: "default",
+      retrievalOptions: {
+        limit,
+        sourceType,
+        query
+      }
+    };
+  }
+
   if (/^recent\b/i.test(text)) {
     const parts = text.trim().split(/\s+/).slice(1);
     let limit: number | undefined;

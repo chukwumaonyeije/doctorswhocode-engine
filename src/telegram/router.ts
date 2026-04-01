@@ -3,7 +3,7 @@ import { config } from "../config";
 import { exportRecordPdf } from "../export/pdf";
 import { ingestInputWithOptions } from "../ingest";
 import { buildRecord } from "../normalize/normalizeInput";
-import { ensureDatabase, fetchRecentRecords, fetchRecordById } from "../storage/db";
+import { ensureDatabase, fetchRecentRecords, fetchRecordById, searchRecords } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
 import type { ActionArtifacts, AppAction, CanonicalAction, ParsedCommand } from "../types";
 import { AppError } from "../utils/errors";
@@ -163,6 +163,36 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
     };
   }
 
+  if (parsed.action === "search") {
+    const query = parsed.retrievalOptions?.query ?? parsed.input ?? "";
+    const matches = await searchRecords({
+      query,
+      limit: parsed.retrievalOptions?.limit,
+      sourceType: parsed.retrievalOptions?.sourceType
+    });
+
+    if (matches.length === 0) {
+      return {
+        reply: `No saved analyses matched "${query}"${parsed.retrievalOptions?.sourceType ? ` in ${parsed.retrievalOptions.sourceType}` : ""}.`,
+        output: `No saved analyses matched "${query}".`,
+        savedPaths: []
+      };
+    }
+
+    const lines = matches.map((item) =>
+      `- ${item.id} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
+    );
+
+    return {
+      reply: [
+        `Search results for "${query}"${parsed.retrievalOptions?.sourceType ? ` (${parsed.retrievalOptions.sourceType})` : ""}:`,
+        ...lines
+      ].join("\n"),
+      output: lines.join("\n"),
+      savedPaths: []
+    };
+  }
+
   const recent = await fetchRecentRecords({
     limit: parsed.retrievalOptions?.limit,
     sourceType: parsed.retrievalOptions?.sourceType
@@ -190,6 +220,6 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
   };
 }
 
-function isRetrievalAction(action: AppAction | undefined): action is "retrieve" | "recent" {
-  return action === "retrieve" || action === "recent";
+function isRetrievalAction(action: AppAction | undefined): action is "retrieve" | "recent" | "search" {
+  return action === "retrieve" || action === "recent" || action === "search";
 }

@@ -1,5 +1,5 @@
 export type CanonicalAction = "digest" | "file" | "summarize" | "mdx";
-export type AppAction = CanonicalAction | "retrieve" | "recent" | "pdf";
+export type AppAction = CanonicalAction | "retrieve" | "recent" | "search" | "pdf";
 
 export type SourceType =
   | "text"
@@ -30,6 +30,7 @@ export interface ParsedCommand {
   retrievalOptions?: {
     limit?: number;
     sourceType?: SourceType;
+    query?: string;
   };
 }
 

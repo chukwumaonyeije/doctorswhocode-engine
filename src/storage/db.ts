@@ -268,3 +268,53 @@ export async function fetchRecentRecords(params?: {
 
   return result.rows;
 }
+
+export async function searchRecords(params: {
+  query: string;
+  limit?: number;
+  sourceType?: string;
+}): Promise<
+  Array<{
+    id: string;
+    title: string | null;
+    sourceType: string;
+    requestedAction: string;
+    createdAt: string;
+  }>
+> {
+  const limit = Math.min(Math.max(params.limit ?? 5, 1), 10);
+  const sourceType = params.sourceType;
+  const searchQuery = `%${params.query.trim()}%`;
+
+  const result = (await getPool().query(
+    `
+      select
+        id,
+        title,
+        source_type as "sourceType",
+        requested_action as "requestedAction",
+        created_at as "createdAt"
+      from research_records
+      where ($1::text is null or source_type = $1)
+        and (
+          coalesce(title, '') ilike $2
+          or source_reference ilike $2
+          or normalized_text ilike $2
+          or coalesce(outputs->>'output', '') ilike $2
+        )
+      order by created_at desc
+      limit $3
+    `,
+    [sourceType ?? null, searchQuery, limit]
+  )) as {
+    rows: Array<{
+      id: string;
+      title: string | null;
+      sourceType: string;
+      requestedAction: string;
+      createdAt: string;
+    }>;
+  };
+
+  return result.rows;
+}
