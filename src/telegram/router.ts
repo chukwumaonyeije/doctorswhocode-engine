@@ -1,5 +1,5 @@
 import { runAction } from "../actions";
-import { ingestInput } from "../ingest";
+import { ingestInputWithOptions } from "../ingest";
 import { buildRecord } from "../normalize/normalizeInput";
 import { ensureDatabase } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
@@ -21,7 +21,9 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
   await ensureDatabase();
 
   logInfo("ingest_started", { action: parsed.action });
-  const ingested = await ingestInput(parsed.input);
+  const ingested = await ingestInputWithOptions(parsed.input, {
+    analysisMode: parsed.analysisMode
+  });
   logInfo("ingest_completed", {
     action: parsed.action,
     sourceType: ingested.sourceType,

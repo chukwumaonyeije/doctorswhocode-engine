@@ -8,6 +8,15 @@ import { ingestYouTube } from "./youtube";
 import { ingestUrl } from "./url";
 
 export async function ingestInput(input: string): Promise<IngestedSource> {
+  return ingestInputWithOptions(input);
+}
+
+export async function ingestInputWithOptions(
+  input: string,
+  options?: {
+    analysisMode?: "default" | "youtube_fast" | "youtube_deep";
+  }
+): Promise<IngestedSource> {
   const classification = classifyInput(input);
 
   switch (classification) {
@@ -18,7 +27,9 @@ export async function ingestInput(input: string): Promise<IngestedSource> {
       return ingestUrl(input);
     case "transcript":
       if (/(youtube\.com|youtu\.be)/i.test(input)) {
-        return ingestYouTube(input);
+        return ingestYouTube(input, {
+          allowHostedProviders: options?.analysisMode === "youtube_deep"
+        });
       }
       return ingestTranscript(input);
     case "audio_transcript":

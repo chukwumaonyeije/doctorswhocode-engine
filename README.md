@@ -41,7 +41,7 @@ Pipeline:
 2. Set `TELEGRAM_BOT_TOKEN`
 3. Set `OPENAI_API_KEY`
 4. Set `DATABASE_URL`
-5. Optionally set `OPENAI_MODEL`, `OPENAI_TIMEOUT_MS`, `PORT`, `GITHUB_TOKEN`, `GITHUB_REPO`, and `GITHUB_BRANCH`
+5. Optionally set `OPENAI_MODEL`, `OPENAI_TIMEOUT_MS`, `SUPADATA_API_KEY`, `FETCHTRANSCRIPT_API_KEY`, `PORT`, `GITHUB_TOKEN`, `GITHUB_REPO`, and `GITHUB_BRANCH`
 6. Install dependencies with `npm install`
 7. Run `npm run dev`
 

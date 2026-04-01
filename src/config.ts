@@ -12,6 +12,8 @@ export const config: AppConfig = {
   openAiTimeoutMs: Number(process.env.OPENAI_TIMEOUT_MS ?? 120000),
   baseUrl: process.env.BASE_URL ?? "http://localhost:3000",
   databaseUrl: process.env.DATABASE_URL ?? "",
+  supadataApiKey: process.env.SUPADATA_API_KEY ?? "",
+  fetchTranscriptApiKey: process.env.FETCHTRANSCRIPT_API_KEY ?? "",
   githubToken: process.env.GITHUB_TOKEN ?? "",
   githubRepo: process.env.GITHUB_REPO ?? "chukwumaonyeije/doctorswhocode-engine",
   githubBranch: process.env.GITHUB_BRANCH ?? "main",

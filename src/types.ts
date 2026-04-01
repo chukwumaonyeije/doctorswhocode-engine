@@ -93,6 +93,8 @@ export interface AppConfig {
   openAiTimeoutMs: number;
   baseUrl: string;
   databaseUrl: string;
+  supadataApiKey: string;
+  fetchTranscriptApiKey: string;
   githubToken: string;
   githubRepo: string;
   githubBranch: string;

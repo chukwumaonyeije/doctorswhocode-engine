@@ -1,4 +1,5 @@
 import axios from "axios";
+import { config } from "../config";
 import { AppError } from "../utils/errors";
 import { logInfo } from "../utils/logging";
 import type { IngestedSource } from "../types";
@@ -20,14 +21,21 @@ interface YouTubeOEmbedResponse {
   thumbnail_url?: string;
 }
 
-export async function ingestYouTube(url: string): Promise<IngestedSource> {
+export async function ingestYouTube(
+  url: string,
+  options?: {
+    allowHostedProviders?: boolean;
+  }
+): Promise<IngestedSource> {
   const videoId = extractYouTubeVideoId(url);
   if (!videoId) {
     throw new AppError("Could not determine the YouTube video ID from that URL.");
   }
 
   const metadata = await fetchYouTubeMetadata(url);
-  const transcriptResult = await fetchYouTubeTranscript(url);
+  const transcriptResult = await fetchYouTubeTranscript(url, {
+    allowHostedProviders: options?.allowHostedProviders ?? false
+  });
   const transcriptLines = transcriptResult.lines ?? [];
 
   const normalizedText =
@@ -114,7 +122,10 @@ async function fetchYouTubeMetadata(url: string): Promise<YouTubeOEmbedResponse>
 }
 
 async function fetchYouTubeTranscript(
-  url: string
+  url: string,
+  options?: {
+    allowHostedProviders?: boolean;
+  }
 ): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
   const attempts: string[] = [];
 
@@ -134,6 +145,26 @@ async function fetchYouTubeTranscript(
     }
     if (fallback.error) {
       attempts.push(`fallback:${fallback.error}`);
+    }
+  }
+
+  if (options?.allowHostedProviders) {
+    const supadata = await fetchTranscriptWithSupadata(url);
+    if (supadata.lines?.length) {
+      return supadata;
+    }
+    if (supadata.error) {
+      attempts.push(`supadata:${supadata.error}`);
+    }
+
+    if (videoId) {
+      const fetchTranscript = await fetchTranscriptWithFetchTranscript(videoId);
+      if (fetchTranscript.lines?.length) {
+        return fetchTranscript;
+      }
+      if (fetchTranscript.error) {
+        attempts.push(`fetchtranscript:${fetchTranscript.error}`);
+      }
     }
   }
 
@@ -229,6 +260,181 @@ async function fetchTranscriptWithFallbackStrategy(
   }
 }
 
+async function fetchTranscriptWithSupadata(
+  url: string
+): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
+  if (!config.supadataApiKey) {
+    return { error: "Supadata API key not configured" };
+  }
+
+  try {
+    logInfo("youtube_transcript_attempt", {
+      strategy: "supadata"
+    });
+
+    const initialResponse = await axios.get("https://api.supadata.ai/v1/transcript", {
+      params: {
+        url,
+        text: false,
+        mode: "native"
+      },
+      headers: {
+        "x-api-key": config.supadataApiKey
+      },
+      timeout: 30000,
+      validateStatus: () => true
+    });
+
+    if (initialResponse.status === 200) {
+      const lines = mapSupadataContentToLines(initialResponse.data?.content);
+      if (lines.length > 0) {
+        logInfo("youtube_transcript_success", {
+          strategy: "supadata",
+          lineCount: lines.length
+        });
+        return {
+          lines,
+          source: "supadata"
+        };
+      }
+    }
+
+    if (initialResponse.status === 202 && initialResponse.data?.jobId) {
+      const jobResult = await pollSupadataJob(initialResponse.data.jobId);
+      if (jobResult.lines?.length) {
+        return jobResult;
+      }
+      return { error: jobResult.error ?? "Supadata job did not return transcript" };
+    }
+
+    return {
+      error: `Supadata returned HTTP ${initialResponse.status}`
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Supadata transcript strategy failed"
+    };
+  }
+}
+
+async function pollSupadataJob(
+  jobId: string
+): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
+  const deadline = Date.now() + 60000;
+
+  while (Date.now() < deadline) {
+    const response = await axios.get(`https://api.supadata.ai/v1/transcript/${jobId}`, {
+      headers: {
+        "x-api-key": config.supadataApiKey
+      },
+      timeout: 15000,
+      validateStatus: () => true
+    });
+
+    if (response.status >= 400) {
+      return {
+        error: `Supadata job polling returned HTTP ${response.status}`
+      };
+    }
+
+    const status = response.data?.status;
+    if (status === "completed") {
+      const lines = mapSupadataContentToLines(response.data?.content);
+      if (lines.length > 0) {
+        logInfo("youtube_transcript_success", {
+          strategy: "supadata",
+          lineCount: lines.length
+        });
+        return {
+          lines,
+          source: "supadata"
+        };
+      }
+
+      return {
+        error: "Supadata completed but returned no transcript content"
+      };
+    }
+
+    if (status === "failed") {
+      return {
+        error: response.data?.error ?? "Supadata transcript job failed"
+      };
+    }
+
+    await delay(1000);
+  }
+
+  return {
+    error: "Supadata transcript polling timed out"
+  };
+}
+
+async function fetchTranscriptWithFetchTranscript(
+  videoId: string
+): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
+  if (!config.fetchTranscriptApiKey) {
+    return { error: "FetchTranscript API key not configured" };
+  }
+
+  try {
+    logInfo("youtube_transcript_attempt", {
+      strategy: "fetchtranscript"
+    });
+
+    const response = await axios.get(`https://api.fetchtranscript.com/v1/transcripts/${videoId}`, {
+      params: {
+        format: "json",
+        lang: "en"
+      },
+      headers: {
+        Authorization: `Bearer ${config.fetchTranscriptApiKey}`
+      },
+      timeout: 30000,
+      validateStatus: () => true
+    });
+
+    if (response.status !== 200) {
+      return {
+        error: `FetchTranscript returned HTTP ${response.status}`
+      };
+    }
+
+    const segments: Array<{ text?: unknown; start?: unknown; duration?: unknown }> = Array.isArray(
+      response.data?.segments
+    )
+      ? response.data.segments
+      : [];
+    const lines = segments
+      .map((segment) => ({
+        text: String(segment.text ?? ""),
+        offset: Number(segment.start ?? 0) * 1000,
+        duration: Number(segment.duration ?? 0) * 1000
+      }))
+      .filter((segment) => segment.text.trim().length > 0);
+
+    if (lines.length === 0) {
+      return {
+        error: "FetchTranscript returned no transcript segments"
+      };
+    }
+
+    logInfo("youtube_transcript_success", {
+      strategy: "fetchtranscript",
+      lineCount: lines.length
+    });
+
+    return {
+      lines,
+      source: "fetchtranscript"
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "FetchTranscript strategy failed"
+    };
+  }
+}
+
 async function loadYoutubeTranscriptApi(): Promise<{
   getTranscript: (videoId: string) => Promise<Array<{ text: string; offset?: number; duration?: number }>>;
 }> {
@@ -268,4 +474,32 @@ function buildMetadataOnlyText(params: {
     `Video ID: ${params.videoId}`,
     "Transcript was not available from the current retrieval path."
   ].join("\n");
+}
+
+function mapSupadataContentToLines(content: unknown): YoutubeTranscriptLine[] {
+  if (typeof content === "string") {
+    return content
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => ({ text: line }));
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((item) => ({
+        text: String((item as { text?: unknown }).text ?? ""),
+        offset: Number((item as { offset?: unknown }).offset ?? 0),
+        duration: Number((item as { duration?: unknown }).duration ?? 0)
+      }))
+      .filter((line) => line.text.trim().length > 0);
+  }
+
+  return [];
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }
