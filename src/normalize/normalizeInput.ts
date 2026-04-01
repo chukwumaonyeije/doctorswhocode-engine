@@ -42,7 +42,14 @@ export function classifyInput(input: string): SourceType {
   return "unknown";
 }
 
-export function buildRecord(action: CanonicalAction, ingested: IngestedSource): NormalizedRecord {
+export function buildRecord(
+  action: CanonicalAction,
+  ingested: IngestedSource,
+  extras?: {
+    metadata?: Record<string, unknown>;
+    tags?: string[];
+  }
+): NormalizedRecord {
   const createdAt = isoNow();
   const id = buildHash(`${action}:${ingested.sourceReference}:${ingested.normalizedText}`);
   const slug = slugify(ingested.title ?? ingested.sourceReference ?? "research-note");
@@ -60,10 +67,13 @@ export function buildRecord(action: CanonicalAction, ingested: IngestedSource): 
     date: ingested.date,
     completeness: ingested.completeness,
     requestedAction: action,
-    tags: ingested.tags ?? [],
+    tags: [...new Set([...(ingested.tags ?? []), ...(extras?.tags ?? [])])],
     createdAt,
     model: config.openAiModel,
     status: "processed",
-    metadata: ingested.metadata ?? {}
+    metadata: {
+      ...(ingested.metadata ?? {}),
+      ...(extras?.metadata ?? {})
+    }
   };
 }

@@ -21,6 +21,10 @@ export interface ParsedCommand {
   action?: CanonicalAction;
   input?: string;
   error?: string;
+  intentLabel?: string;
+  contextNote?: string;
+  requestedFocus?: string[];
+  rawRequest?: string;
 }
 
 export interface IngestedSource {

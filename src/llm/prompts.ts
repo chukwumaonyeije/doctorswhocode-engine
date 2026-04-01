@@ -28,7 +28,11 @@ export async function buildActionPrompt(action: CanonicalAction, record: Normali
       date: record.date,
       completeness: record.completeness,
       tags: record.tags,
-      createdAt: record.createdAt
+      createdAt: record.createdAt,
+      userIntent: record.metadata.userIntent,
+      intentLabel: record.metadata.intentLabel,
+      contextNote: record.metadata.contextNote,
+      requestedFocus: record.metadata.requestedFocus
     },
     null,
     2

@@ -23,11 +23,20 @@ export async function handleIncomingText(text: string): Promise<ActionArtifacts>
     sourceType: ingested.sourceType,
     completeness: ingested.completeness
   });
-  const record = buildRecord(parsed.action, ingested);
+  const record = buildRecord(parsed.action, ingested, {
+    metadata: {
+      userIntent: parsed.rawRequest,
+      intentLabel: parsed.intentLabel,
+      contextNote: parsed.contextNote,
+      requestedFocus: parsed.requestedFocus
+    },
+    tags: parsed.requestedFocus ?? []
+  });
 
   logInfo("action_started", {
     action: parsed.action,
-    recordId: record.id
+    recordId: record.id,
+    intentLabel: parsed.intentLabel
   });
   return runAction(parsed.action, { record });
 }
