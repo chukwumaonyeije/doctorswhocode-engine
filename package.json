@@ -12,6 +12,7 @@
     "axios": "^1.8.4",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.14.1",
     "youtube-transcript": "^1.2.1",
     "youtube-transcript-api": "^1.1.2"
