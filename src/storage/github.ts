@@ -1,5 +1,6 @@
 import axios from "axios";
 import { config } from "../config";
+import { logError, logInfo } from "../utils/logging";
 import type { NormalizedRecord } from "../types";
 
 export interface GithubDraftSyncResult {
@@ -23,10 +24,17 @@ export async function syncDraftPublishOutput(params: {
     return { status: "failed", target: path };
   }
 
-  const apiUrl = `https://api.github.com/repos/${config.githubRepo}/contents/${toRepoRelativePath(path)}`;
+  const repoPath = toRepoRelativePath(path);
+  const apiUrl = `https://api.github.com/repos/${config.githubRepo}/contents/${repoPath}`;
   const message = `Add draft publish output for ${record.slug}`;
 
   try {
+    logInfo("github_sync_started", {
+      repo: config.githubRepo,
+      branch: config.githubBranch,
+      repoPath
+    });
+
     const existing = await axios
       .get(apiUrl, {
         headers: buildHeaders()
@@ -49,12 +57,23 @@ export async function syncDraftPublishOutput(params: {
 
     return {
       status: "synced",
-      target: `${config.githubRepo}:${config.githubBranch}:${toRepoRelativePath(path)}`
+      target: `${config.githubRepo}:${config.githubBranch}:${repoPath}`
     };
-  } catch {
+  } catch (error) {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    const responseData = axios.isAxiosError(error) ? error.response?.data : undefined;
+
+    logError("github_sync_failed", {
+      repo: config.githubRepo,
+      branch: config.githubBranch,
+      repoPath,
+      status,
+      response: responseData
+    });
+
     return {
       status: "failed",
-      target: `${config.githubRepo}:${config.githubBranch}:${toRepoRelativePath(path)}`
+      target: `${config.githubRepo}:${config.githubBranch}:${repoPath}`
     };
   }
 }
