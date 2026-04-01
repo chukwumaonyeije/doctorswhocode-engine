@@ -165,6 +165,13 @@ export async function fetchRecordById(recordId: string): Promise<{
   title: string | null;
   createdAt: string;
   output: string;
+  sourceReference?: string;
+  normalizedText?: string;
+  completeness?: string;
+  publication?: string | null;
+  date?: string | null;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
 } | null> {
   const result = (await getPool().query(
     `
@@ -175,7 +182,14 @@ export async function fetchRecordById(recordId: string): Promise<{
         requested_action as "requestedAction",
         title,
         created_at as "createdAt",
-        outputs->>'output' as output
+        outputs->>'output' as output,
+        source_reference as "sourceReference",
+        normalized_text as "normalizedText",
+        completeness,
+        publication,
+        source_date as date,
+        tags,
+        metadata
       from research_records
       where id = $1
       limit 1
@@ -190,6 +204,13 @@ export async function fetchRecordById(recordId: string): Promise<{
       title: string | null;
       createdAt: string;
       output: string | null;
+      sourceReference: string;
+      normalizedText: string;
+      completeness: string;
+      publication: string | null;
+      date: string | null;
+      tags: string[] | null;
+      metadata: Record<string, unknown> | null;
     }>;
   };
 
@@ -200,7 +221,9 @@ export async function fetchRecordById(recordId: string): Promise<{
 
   return {
     ...row,
-    output: row.output ?? "No stored output was found for this record."
+    output: row.output ?? "No stored output was found for this record.",
+    tags: row.tags ?? [],
+    metadata: row.metadata ?? {}
   };
 }
 

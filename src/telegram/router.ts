@@ -1,4 +1,5 @@
 import { runAction } from "../actions";
+import { config } from "../config";
 import { ingestInputWithOptions } from "../ingest";
 import { buildRecord } from "../normalize/normalizeInput";
 import { ensureDatabase, fetchRecentRecords, fetchRecordById } from "../storage/db";
@@ -23,6 +24,10 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
 
   if (isRetrievalAction(parsed.action)) {
     return handleRetrieval(parsed);
+  }
+
+  if (parsed.action === "mdx" && parsed.intentLabel === "mdx_from_record") {
+    return handleMdxFromRecord(parsed.input);
   }
 
   logInfo("ingest_started", { action: parsed.action });
@@ -51,6 +56,53 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
     intentLabel: parsed.intentLabel
   });
   return runAction(parsed.action, { record });
+}
+
+async function handleMdxFromRecord(recordId: string): Promise<ActionArtifacts> {
+  const stored = await fetchRecordById(recordId);
+  if (!stored) {
+    throw new AppError(`No saved analysis found for record ID ${recordId}.`);
+  }
+
+  const record = {
+    id: stored.id,
+    slug: stored.slug,
+    sourceType: stored.sourceType as
+      | "text"
+      | "webpage"
+      | "pubmed"
+      | "research_article"
+      | "transcript"
+      | "audio_transcript"
+      | "unknown",
+    sourceReference: stored.sourceReference ?? `record:${stored.id}`,
+    rawInput: stored.output,
+    normalizedText: stored.normalizedText ?? stored.output,
+    title: stored.title ?? undefined,
+    authors: [],
+    publication: stored.publication ?? undefined,
+    date: stored.date ?? undefined,
+    completeness: (stored.completeness as
+      | "full_text"
+      | "abstract_only"
+      | "transcript_only"
+      | "partial"
+      | "unknown") ?? "unknown",
+    requestedAction: "mdx" as const,
+    tags: [...new Set([...(stored.tags ?? []), "mdx_from_record"])],
+    createdAt: new Date().toISOString(),
+    model: config.openAiModel,
+    status: "processed" as const,
+    metadata: {
+      ...(stored.metadata ?? {}),
+      sourceRecordId: stored.id,
+      sourceRecordAction: stored.requestedAction,
+      userIntent: `mdx ${stored.id}`,
+      intentLabel: "mdx_from_record"
+    }
+  };
+
+  return runAction("mdx", { record });
 }
 
 async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> {

@@ -18,7 +18,9 @@ The Telegram-to-Astro research agent is live and functional in its first working
 - Webpage ingestion works for accessible pages
 - PubMed ingestion works
 - Initial YouTube URL detection and transcript/metadata ingestion is in place
+- Deep YouTube analysis is in place with local and hosted transcript fallbacks
 - Blocked webpage extraction now returns more helpful user-facing errors
+- Retrieval by record ID and recent-item listing is in place
 
 ### Core Architectural Rules Now In Place
 
@@ -71,6 +73,10 @@ In progress
 - Request-level observability in logs
 - Timeouts and retries tuned for real usage
 
+### Notes
+
+Most of this phase is now functionally in place for a working beta. Remaining work is mostly polish rather than foundational reliability.
+
 ### Definition of Done
 
 - Raw infrastructure errors rarely leak into Telegram
@@ -85,7 +91,7 @@ Make YouTube URLs and transcript-driven inputs first-class sources.
 
 ### Status
 
-In progress
+Substantially underway
 
 ### Focus Areas
 
@@ -95,6 +101,8 @@ In progress
 - Graceful fallback when transcripts are unavailable
 - Pasted transcript support
 - Transcript provenance and completeness tracking
+- Deep-analysis acknowledgement flow
+- Hosted fallback providers for transcript acquisition
 
 ### Definition of Done
 
@@ -110,7 +118,7 @@ Make the archive genuinely useful after many records have accumulated.
 
 ### Status
 
-Planned
+Started
 
 ### Focus Areas
 
@@ -118,6 +126,10 @@ Planned
 - Retrieve by PMID, URL, record ID, tag, and date
 - Show recent filings and recent digests
 - Add topic-aware and physician-builder-aware filtering
+
+### Notes
+
+Record ID retrieval and recent-item listing are now implemented. Search and richer filters are the next retrieval milestone.
 
 ### Definition of Done
 
@@ -141,6 +153,8 @@ Planned
 - Stronger voice alignment for Doctors Who Code and related properties
 - Explicit curated-output workflow
 - GitHub draft-sync only for curated publish outputs
+- MDX on demand from saved records
+- PDF-on-demand export workflow
 
 ### Definition of Done
 
@@ -175,10 +189,10 @@ Later runway
 
 ### Priority Order
 
-1. Finish Phase 2 reliability and Telegram UX polish
-2. Build Phase 3 YouTube and transcript ingestion
-3. Add Phase 4 retrieval and search
-4. Improve Phase 5 MDX publishing quality
+1. Add MDX on demand from saved analyses
+2. Add PDF on demand from saved analyses
+3. Expand retrieval into true search/filtering
+4. Continue output/template tuning by source type
 
 ## Improvement Runway
 

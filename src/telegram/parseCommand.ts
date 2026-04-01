@@ -239,6 +239,18 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     };
   }
 
+  const mdxFromRecordMatch = text.match(/^(?:mdx|blog)\s+([a-f0-9]{8,32})$/i);
+  if (mdxFromRecordMatch) {
+    return {
+      valid: true,
+      action: "mdx",
+      input: mdxFromRecordMatch[1],
+      intentLabel: "mdx_from_record",
+      rawRequest: text,
+      analysisMode: "default"
+    };
+  }
+
   if (/^recent\b/i.test(text)) {
     const parts = text.trim().split(/\s+/).slice(1);
     let limit: number | undefined;
