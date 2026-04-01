@@ -1,5 +1,5 @@
 export type CanonicalAction = "digest" | "file" | "summarize" | "mdx";
-export type AppAction = CanonicalAction | "retrieve" | "recent";
+export type AppAction = CanonicalAction | "retrieve" | "recent" | "pdf";
 
 export type SourceType =
   | "text"

@@ -1,10 +1,11 @@
 import { runAction } from "../actions";
 import { config } from "../config";
+import { exportRecordPdf } from "../export/pdf";
 import { ingestInputWithOptions } from "../ingest";
 import { buildRecord } from "../normalize/normalizeInput";
 import { ensureDatabase, fetchRecentRecords, fetchRecordById } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
-import type { ActionArtifacts, AppAction, ParsedCommand } from "../types";
+import type { ActionArtifacts, AppAction, CanonicalAction, ParsedCommand } from "../types";
 import { AppError } from "../utils/errors";
 import { logInfo } from "../utils/logging";
 import { parseCommand } from "./parseCommand";
@@ -30,16 +31,22 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
     return handleMdxFromRecord(parsed.input);
   }
 
-  logInfo("ingest_started", { action: parsed.action });
+  if (parsed.action === "pdf" && parsed.intentLabel === "pdf_from_record") {
+    return handlePdfFromRecord(parsed.input);
+  }
+
+  const action = parsed.action as CanonicalAction;
+
+  logInfo("ingest_started", { action });
   const ingested = await ingestInputWithOptions(parsed.input, {
     analysisMode: parsed.analysisMode
   });
   logInfo("ingest_completed", {
-    action: parsed.action,
+    action,
     sourceType: ingested.sourceType,
     completeness: ingested.completeness
   });
-  const record = buildRecord(parsed.action, ingested, {
+  const record = buildRecord(action, ingested, {
     metadata: {
       userIntent: parsed.rawRequest,
       intentLabel: parsed.intentLabel,
@@ -51,11 +58,11 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
   });
 
   logInfo("action_started", {
-    action: parsed.action,
+    action,
     recordId: record.id,
     intentLabel: parsed.intentLabel
   });
-  return runAction(parsed.action, { record });
+  return runAction(action, { record });
 }
 
 async function handleMdxFromRecord(recordId: string): Promise<ActionArtifacts> {
@@ -103,6 +110,34 @@ async function handleMdxFromRecord(recordId: string): Promise<ActionArtifacts> {
   };
 
   return runAction("mdx", { record });
+}
+
+async function handlePdfFromRecord(recordId: string): Promise<ActionArtifacts> {
+  const stored = await fetchRecordById(recordId);
+  if (!stored) {
+    throw new AppError(`No saved analysis found for record ID ${recordId}.`);
+  }
+
+  const pdfPath = await exportRecordPdf({
+    id: stored.id,
+    title: stored.title ?? "Untitled Analysis",
+    sourceType: stored.sourceType,
+    requestedAction: stored.requestedAction,
+    createdAt: stored.createdAt,
+    sourceReference: stored.sourceReference ?? `record:${stored.id}`,
+    body: stored.output
+  });
+
+  return {
+    reply: [
+      "PDF created.",
+      `Record ID: ${stored.id}`,
+      `Saved PDF: ${pdfPath}`
+    ].join("\n"),
+    output: pdfPath,
+    savedPaths: [pdfPath],
+    recordId: stored.id
+  };
 }
 
 async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> {

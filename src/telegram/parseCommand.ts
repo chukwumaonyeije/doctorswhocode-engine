@@ -251,6 +251,18 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     };
   }
 
+  const pdfFromRecordMatch = text.match(/^(?:pdf|export\s+pdf)\s+([a-f0-9]{8,32})$/i);
+  if (pdfFromRecordMatch) {
+    return {
+      valid: true,
+      action: "pdf",
+      input: pdfFromRecordMatch[1],
+      intentLabel: "pdf_from_record",
+      rawRequest: text,
+      analysisMode: "default"
+    };
+  }
+
   if (/^recent\b/i.test(text)) {
     const parts = text.trim().split(/\s+/).slice(1);
     let limit: number | undefined;
