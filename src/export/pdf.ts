@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { AppError } from "../utils/errors";
 
 const execFileAsync = promisify(execFile);
 
@@ -27,10 +28,23 @@ export async function exportRecordPdf(input: PdfExportInput): Promise<string> {
 
   await fs.writeFile(jsonPath, `${JSON.stringify(input, null, 2)}\n`, "utf8");
 
-  await execFileAsync("python", [scriptPath, jsonPath, pdfPath], {
-    cwd: process.cwd(),
-    timeout: 120000
-  });
+  const pythonCommand = process.env.PYTHON_BIN ?? (process.platform === "win32" ? "python" : "python3");
+
+  try {
+    await execFileAsync(pythonCommand, [scriptPath, jsonPath, pdfPath], {
+      cwd: process.cwd(),
+      timeout: 120000
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/ENOENT/i.test(message)) {
+      throw new AppError(
+        `PDF export failed because ${pythonCommand} is not available in the runtime environment.`
+      );
+    }
+
+    throw new AppError(`PDF export failed: ${message}`);
+  }
 
   return pdfPath;
 }
