@@ -32,7 +32,9 @@ export async function runMdxAction({ record }: ActionContext): Promise<ActionArt
       "",
       `Saved MDX: ${paths.mdxPath}`,
       `Canonical record ID: ${record.id}`,
-      `GitHub draft sync: ${githubSync.status}${githubSync.target ? ` (${githubSync.target})` : ""}`
+      `GitHub draft sync: ${githubSync.status}${githubSync.target ? ` (${githubSync.target})` : ""}${
+        githubSync.errorMessage ? ` | ${githubSync.errorMessage}` : ""
+      }`
     ].join("\n"),
     output: mdx,
     savedPaths,

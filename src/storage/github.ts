@@ -6,6 +6,7 @@ import type { NormalizedRecord } from "../types";
 export interface GithubDraftSyncResult {
   status: "not_requested" | "pending" | "synced" | "failed";
   target?: string;
+  errorMessage?: string;
 }
 
 export async function syncDraftPublishOutput(params: {
@@ -21,7 +22,7 @@ export async function syncDraftPublishOutput(params: {
   }
 
   if (!config.githubToken) {
-    return { status: "failed", target: path };
+    return { status: "failed", target: path, errorMessage: "GITHUB_TOKEN is not configured." };
   }
 
   const repoPath = toRepoRelativePath(path);
@@ -62,18 +63,21 @@ export async function syncDraftPublishOutput(params: {
   } catch (error) {
     const status = axios.isAxiosError(error) ? error.response?.status : undefined;
     const responseData = axios.isAxiosError(error) ? error.response?.data : undefined;
+    const errorMessage = buildGithubErrorMessage(status, responseData, error);
 
     logError("github_sync_failed", {
       repo: config.githubRepo,
       branch: config.githubBranch,
       repoPath,
       status,
-      response: responseData
+      response: responseData,
+      errorMessage
     });
 
     return {
       status: "failed",
-      target: `${config.githubRepo}:${config.githubBranch}:${repoPath}`
+      target: `${config.githubRepo}:${config.githubBranch}:${repoPath}`,
+      errorMessage
     };
   }
 }
@@ -99,4 +103,21 @@ function toRepoRelativePath(filePath: string): string {
   }
 
   return normalized.replace(/^\/+/, "");
+}
+
+function buildGithubErrorMessage(status: number | undefined, responseData: unknown, error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const githubMessage =
+      typeof responseData === "object" && responseData !== null && "message" in responseData
+        ? String((responseData as { message?: unknown }).message ?? "")
+        : "";
+
+    if (status) {
+      return githubMessage ? `GitHub API ${status}: ${githubMessage}` : `GitHub API ${status}`;
+    }
+
+    return error.message;
+  }
+
+  return error instanceof Error ? error.message : "Unknown GitHub sync failure";
 }
