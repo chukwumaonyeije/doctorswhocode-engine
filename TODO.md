@@ -1,31 +1,45 @@
 # TODO
 
-## Near Term
+## Phase 2: Reliability and Telegram UX
 
 - Shorten Telegram `file` responses while keeping the full archival note in storage
-- Add clearer Telegram messages for blocked and restricted webpage sources
-- Confirm and stabilize `digest` on a wider sample of webpages
-- Add explicit YouTube URL detection
-- Add transcript ingestion pathway for YouTube and pasted transcripts
+- Continue improving source-specific failure messages
+- Add lightweight retries for transient webpage extraction failures
+- Add request IDs or similar trace markers in logs
+- Add health diagnostics that distinguish app health from dependency health
 
-## Next Product Features
+## Phase 3: YouTube and Transcript Ingestion
 
-- Add `search` and `retrieve` commands
-- Add record lookup by PMID, URL, and canonical record ID
-- Improve MDX prompt and output structure
-- Add explicit curated GitHub draft-sync toggle
-- Add domain-specific prompt tuning for physician-builder content
+- Detect YouTube URLs explicitly
+- Add YouTube metadata extraction
+- Add transcript retrieval when available
+- Add graceful fallback when transcript retrieval fails
+- Support pasted transcripts as a first-class ingestion path
+- Preserve transcript provenance and completeness in normalized records
 
-## Reliability
+## Phase 4: Retrieval and Search
 
-- Add retries for transient source fetch failures
-- Add request IDs in logs
-- Add health detail endpoint for database/OpenAI diagnostics
-- Add tests for command parsing, source classification, and ingestion
+- Add `search` command
+- Add retrieval by canonical record ID
+- Add retrieval by PMID
+- Add retrieval by URL
+- Add recent-items command
+- Add topic-aware and date-aware filtering
 
-## Publishing
+## Phase 5: MDX Publishing and Curated Output
 
 - Improve Astro frontmatter consistency
-- Add publication-ready slug review
-- Add optional CTA and framing blocks by brand target
-- Add workflow for promoting draft MDX to curated publish status
+- Improve title and dek generation
+- Improve article section structure
+- Add stronger brand/voice tuning for physician-builder publishing
+- Make curated GitHub draft sync explicit instead of implicit
+- Add a promotion path from draft to curated publish output
+
+## Phase 6: Advanced Ingestion and Expansion
+
+- Add PDF ingestion
+- Add file upload handling
+- Add richer article/full-text adapters
+- Add deduplication by source hash and canonical reference
+- Add semantic retrieval over stored records
+- Add dashboard or operator review interface

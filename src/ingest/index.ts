@@ -4,6 +4,7 @@ import { ingestAudioTranscript } from "./audio";
 import { ingestPubMed } from "./pubmed";
 import { ingestText } from "./text";
 import { ingestTranscript } from "./transcript";
+import { ingestYouTube } from "./youtube";
 import { ingestUrl } from "./url";
 
 export async function ingestInput(input: string): Promise<IngestedSource> {
@@ -16,6 +17,9 @@ export async function ingestInput(input: string): Promise<IngestedSource> {
     case "research_article":
       return ingestUrl(input);
     case "transcript":
+      if (/(youtube\.com|youtu\.be)/i.test(input)) {
+        return ingestYouTube(input);
+      }
       return ingestTranscript(input);
     case "audio_transcript":
       return ingestAudioTranscript(input);

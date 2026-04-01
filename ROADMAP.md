@@ -1,112 +1,202 @@
 # Research Agent Roadmap
 
-## Current Status
+## Current State
 
-The Telegram-to-Astro research agent is live on Railway with:
+The Telegram-to-Astro research agent is live and functional in its first working form.
 
-- Telegram webhook routing
-- Canonical commands: `digest`, `file`, `summarize`, `mdx`
-- Postgres-backed canonical storage
-- Webpage ingestion through readable extraction
-- PubMed ingestion
-- Telegram responses for working digest and archive flows
-- Astro MDX draft generation scaffold
-- GitHub draft-sync scaffold for curated publish outputs
+### Live and Working
 
-## What Is Done
+- Railway app service is deployed and responding
+- Railway Postgres is connected and acting as the canonical data store
+- Telegram webhook routing is active
+- OpenAI generation is active
+- Canonical commands work:
+  - `digest`
+  - `file`
+  - `summarize`
+  - `mdx`
+- Webpage ingestion works for accessible pages
+- PubMed ingestion works
+- Initial YouTube URL detection and transcript/metadata ingestion is in place
+- Blocked webpage extraction now returns more helpful user-facing errors
 
-### Infrastructure
+### Core Architectural Rules Now In Place
+
+- Online-first persistence is the source of truth
+- Local files are export artifacts, not the canonical store
+- GitHub is reserved for draft publish and curated outputs
+- All inbound content is normalized before rendering
+
+## Phase 1: Foundation and First Live Workflow
+
+### Goal
+
+Get the system online, stable, and capable of real end-to-end Telegram-driven research workflows.
+
+### Status
+
+Completed
+
+### What Was Included
 
 - GitHub repo initialized and connected to Railway
-- Railway app service live
-- Railway Postgres connected and healthy
-- Telegram webhook configured
-- OpenAI Responses API integration working
+- Railway deployment working
+- Postgres-backed canonical persistence
+- Telegram bot webhook processing
+- Shared input normalization model
+- Command parsing and action routing
+- Webpage and PubMed ingestion
+- Digest, file, summarize, and MDX pipelines
+- Initial Telegram-safe response handling
 
-### Core Product
+### Outcome
 
-- Command parsing and routing
-- Source classification
-- Normalization into a shared record
-- Canonical database persistence
-- Local export artifacts
-- Basic Telegram-safe reply chunking
+The app is now a real working product, not just a scaffold.
 
-### Stability Improvements
+## Phase 2: Reliability and Telegram UX
 
-- Non-blocking app startup while database initializes
-- Better startup logging
-- Configurable OpenAI timeout
-- Graceful URL-ingestion error handling for blocked sources
+### Goal
 
-## Immediate Next Milestones
+Make the bot feel dependable, intentional, and comfortable to use day to day.
 
-### Milestone 1: Reliability and UX
+### Status
 
-- Make Telegram responses shorter and cleaner for `file`
-- Replace raw failure messages with intentional user guidance
-- Add request-level logging and trace IDs
-- Add lightweight retry behavior for transient fetch issues
+In progress
 
-### Milestone 2: YouTube and Transcript Ingestion
+### Focus Areas
 
-- Detect YouTube URLs explicitly
-- Resolve video metadata
-- Pull transcript text when available
-- Handle missing transcripts gracefully
-- Normalize transcript confidence and completeness
-- Support pasted YouTube transcripts as fallback
+- Shorter Telegram responses for `file`
+- Cleaner user-facing error messages
+- Better handling for blocked, restricted, or empty source pages
+- Request-level observability in logs
+- Timeouts and retries tuned for real usage
 
-### Milestone 3: Retrieval and Search
+### Definition of Done
 
-- Add search command for archived records
-- Add retrieval by record ID, PMID, URL, tag, and date
-- Add “latest filed items” and “show recent digests”
-- Add physician-builder topic tagging and filtering
+- Raw infrastructure errors rarely leak into Telegram
+- `file` returns concise confirmations while full notes stay in storage
+- Common failure cases point the user toward a useful fallback
 
-### Milestone 4: Better MDX Publishing
+## Phase 3: YouTube and Transcript Ingestion
 
-- Improve frontmatter quality
-- Add better title/dek generation
-- Add stronger Astro-ready section structures
-- Add voice tuning for Doctors Who Code / OpenMFM / CodeCraftMD
-- Make GitHub draft sync explicit for curated publish outputs
+### Goal
 
-## YouTube Support Roadmap
+Make YouTube URLs and transcript-driven inputs first-class sources.
 
-### Phase A
+### Status
 
-- Classify YouTube URLs separately from generic webpages
-- Return a good message when only metadata is available
-- Accept pasted transcript text for immediate use
+In progress
 
-### Phase B
+### Focus Areas
 
-- Add transcript fetch adapter
-- Save transcript provenance and completeness
-- Support `digest`, `summarize`, and `mdx` directly from transcripts
+- Explicit YouTube URL detection
+- Video metadata extraction
+- Transcript retrieval when available
+- Graceful fallback when transcripts are unavailable
+- Pasted transcript support
+- Transcript provenance and completeness tracking
 
-### Phase C
+### Definition of Done
 
-- Add chapter-aware summarization
-- Add speaker segmentation when available
-- Add “clip to insight” workflow for selected timestamps
+- User can send a YouTube URL and receive a meaningful response
+- User can paste a transcript and route it through any canonical command
+- Outputs clearly state whether they were based on transcript text, metadata only, or partial extraction
 
-## Longer-Term Improvement Runway
+## Phase 4: Retrieval, Search, and Research Memory
 
-- Add article/full-text adapters beyond PubMed abstracts
-- Add PDF ingestion
-- Add file upload handling
-- Add source deduplication
-- Add review queue for draft outputs
-- Add curation states: inbox, filed, drafted, publish-ready
-- Add automated GitHub draft PR workflow for curated MDX outputs
-- Add searchable dashboard over Postgres records
-- Add semantic retrieval over stored records
+### Goal
 
-## Architectural Direction
+Make the archive genuinely useful after many records have accumulated.
 
-- Online-first persistence remains the source of truth
-- Local files remain export artifacts
-- GitHub remains for draft publish and curated outputs
-- All inputs continue to normalize before rendering
+### Status
+
+Planned
+
+### Focus Areas
+
+- Search archived records
+- Retrieve by PMID, URL, record ID, tag, and date
+- Show recent filings and recent digests
+- Add topic-aware and physician-builder-aware filtering
+
+### Definition of Done
+
+- Stored research can be found and reused quickly
+- Filing creates durable retrieval value, not just storage
+
+## Phase 5: MDX Publishing and Curated Output
+
+### Goal
+
+Turn stored research into cleaner, more publishable Astro-ready drafts.
+
+### Status
+
+Planned
+
+### Focus Areas
+
+- Better frontmatter generation
+- Better title, dek, and section structure
+- Stronger voice alignment for Doctors Who Code and related properties
+- Explicit curated-output workflow
+- GitHub draft-sync only for curated publish outputs
+
+### Definition of Done
+
+- `mdx` produces cleaner publish-ready drafts
+- Curated outputs can be promoted into a more intentional publishing path
+
+## Phase 6: Advanced Ingestion and Expansion
+
+### Goal
+
+Extend beyond URLs and abstracts into richer research sources and workflows.
+
+### Status
+
+Later runway
+
+### Focus Areas
+
+- PDF ingestion
+- file upload handling
+- richer article/full-text adapters
+- source deduplication
+- semantic retrieval over stored records
+- review queue and curation states
+- dashboard or operator interface over Postgres records
+
+### Definition of Done
+
+- The agent supports a broader set of physician-builder knowledge workflows without losing source awareness
+
+## Immediate Next Priorities
+
+### Priority Order
+
+1. Finish Phase 2 reliability and Telegram UX polish
+2. Build Phase 3 YouTube and transcript ingestion
+3. Add Phase 4 retrieval and search
+4. Improve Phase 5 MDX publishing quality
+
+## Improvement Runway
+
+### Near-Term
+
+- Better Telegram ergonomics
+- Better source-specific failure messaging
+- YouTube ingestion
+- transcript-first workflows
+
+### Mid-Term
+
+- retrieval and research memory
+- stronger MDX quality
+- curated publish flow
+
+### Long-Term
+
+- PDF and file uploads
+- richer data model and retrieval
+- dashboard and review workflow

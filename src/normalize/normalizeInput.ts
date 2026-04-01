@@ -12,6 +12,10 @@ export function classifyInput(input: string): SourceType {
       return "pubmed";
     }
 
+    if (/(youtube\.com|youtu\.be)/i.test(trimmed)) {
+      return "transcript";
+    }
+
     if (/(nejm|jamanetwork|thelancet|bmj|nature|science|medrxiv|biorxiv)/i.test(trimmed)) {
       return "research_article";
     }
