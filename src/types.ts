@@ -1,4 +1,5 @@
 export type CanonicalAction = "digest" | "file" | "summarize" | "mdx";
+export type AppAction = CanonicalAction | "retrieve" | "recent";
 
 export type SourceType =
   | "text"
@@ -18,7 +19,7 @@ export type Completeness =
 
 export interface ParsedCommand {
   valid: boolean;
-  action?: CanonicalAction;
+  action?: AppAction;
   input?: string;
   error?: string;
   intentLabel?: string;
@@ -26,6 +27,10 @@ export interface ParsedCommand {
   requestedFocus?: string[];
   rawRequest?: string;
   analysisMode?: "default" | "youtube_fast" | "youtube_deep";
+  retrievalOptions?: {
+    limit?: number;
+    sourceType?: SourceType;
+  };
 }
 
 export interface IngestedSource {

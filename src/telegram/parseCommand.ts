@@ -1,5 +1,5 @@
 import modes from "../../configs/modes.json";
-import type { CanonicalAction, ParsedCommand } from "../types";
+import type { AppAction, CanonicalAction, ParsedCommand, SourceType } from "../types";
 
 const aliasMap = new Map<string, CanonicalAction>();
 const orderedAliases: string[] = [];
@@ -22,6 +22,11 @@ export function parseCommand(text: string): ParsedCommand {
       valid: false,
       error: "No command detected. Use digest, file, summarize, or mdx."
     };
+  }
+
+  const retrievalCommand = parseRetrievalCommand(trimmed);
+  if (retrievalCommand) {
+    return retrievalCommand;
   }
 
   const lower = trimmed.toLowerCase();
@@ -219,4 +224,66 @@ export function buildDeepYouTubeAcknowledgement(parsed: ParsedCommand): string |
   }
 
   return "Analyzing this video now. I’m extracting what I can and will return with a deeper source-aware reading.";
+}
+
+function parseRetrievalCommand(text: string): ParsedCommand | null {
+  const showMatch = text.match(/^(?:show|retrieve)\s+([a-f0-9]{8,32})$/i);
+  if (showMatch) {
+    return {
+      valid: true,
+      action: "retrieve",
+      input: showMatch[1],
+      intentLabel: "record_retrieval",
+      rawRequest: text,
+      analysisMode: "default"
+    };
+  }
+
+  if (/^recent\b/i.test(text)) {
+    const parts = text.trim().split(/\s+/).slice(1);
+    let limit: number | undefined;
+    let sourceType: SourceType | undefined;
+
+    for (const part of parts) {
+      if (!limit && /^\d+$/.test(part)) {
+        limit = Number(part);
+        continue;
+      }
+
+      const normalized = normalizeSourceType(part);
+      if (normalized) {
+        sourceType = normalized;
+      }
+    }
+
+    return {
+      valid: true,
+      action: "recent",
+      input: "recent",
+      intentLabel: "recent_records",
+      rawRequest: text,
+      analysisMode: "default",
+      retrievalOptions: {
+        limit,
+        sourceType
+      }
+    };
+  }
+
+  return null;
+}
+
+function normalizeSourceType(value: string): SourceType | undefined {
+  const normalized = value.toLowerCase();
+  const allowed: SourceType[] = [
+    "text",
+    "webpage",
+    "pubmed",
+    "research_article",
+    "transcript",
+    "audio_transcript",
+    "unknown"
+  ];
+
+  return allowed.includes(normalized as SourceType) ? (normalized as SourceType) : undefined;
 }

@@ -156,3 +156,92 @@ export async function persistRecord(payload: PersistedRecordPayload): Promise<vo
     ]
   );
 }
+
+export async function fetchRecordById(recordId: string): Promise<{
+  id: string;
+  slug: string;
+  sourceType: string;
+  requestedAction: string;
+  title: string | null;
+  createdAt: string;
+  output: string;
+} | null> {
+  const result = (await getPool().query(
+    `
+      select
+        id,
+        slug,
+        source_type as "sourceType",
+        requested_action as "requestedAction",
+        title,
+        created_at as "createdAt",
+        outputs->>'output' as output
+      from research_records
+      where id = $1
+      limit 1
+    `,
+    [recordId]
+  )) as {
+    rows: Array<{
+      id: string;
+      slug: string;
+      sourceType: string;
+      requestedAction: string;
+      title: string | null;
+      createdAt: string;
+      output: string | null;
+    }>;
+  };
+
+  const row = result.rows[0];
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    output: row.output ?? "No stored output was found for this record."
+  };
+}
+
+export async function fetchRecentRecords(params?: {
+  limit?: number;
+  sourceType?: string;
+}): Promise<
+  Array<{
+    id: string;
+    title: string | null;
+    sourceType: string;
+    requestedAction: string;
+    createdAt: string;
+  }>
+> {
+  const limit = Math.min(Math.max(params?.limit ?? 5, 1), 10);
+  const sourceType = params?.sourceType;
+
+  const result = (await getPool().query(
+    `
+      select
+        id,
+        title,
+        source_type as "sourceType",
+        requested_action as "requestedAction",
+        created_at as "createdAt"
+      from research_records
+      where ($1::text is null or source_type = $1)
+      order by created_at desc
+      limit $2
+    `,
+    [sourceType ?? null, limit]
+  )) as {
+    rows: Array<{
+      id: string;
+      title: string | null;
+      sourceType: string;
+      requestedAction: string;
+      createdAt: string;
+    }>;
+  };
+
+  return result.rows;
+}
