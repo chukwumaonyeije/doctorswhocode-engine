@@ -12,10 +12,6 @@ type YoutubeTranscriptApi = {
   fetchTranscript: (videoIdOrUrl: string) => Promise<YoutubeTranscriptLine[]>;
 };
 
-const { YoutubeTranscript } = require("youtube-transcript") as {
-  YoutubeTranscript: YoutubeTranscriptApi;
-};
-
 interface YouTubeOEmbedResponse {
   title?: string;
   author_name?: string;
@@ -118,6 +114,7 @@ async function fetchYouTubeTranscript(
   url: string
 ): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string }> {
   try {
+    const YoutubeTranscript = await loadYoutubeTranscript();
     const lines = await Promise.race([
       YoutubeTranscript.fetchTranscript(url),
       new Promise<never>((_, reject) => {
@@ -131,6 +128,23 @@ async function fetchYouTubeTranscript(
       error: error instanceof Error ? error.message : "Transcript unavailable"
     };
   }
+}
+
+async function loadYoutubeTranscript(): Promise<YoutubeTranscriptApi> {
+  const module = (await import("youtube-transcript")) as {
+    YoutubeTranscript?: YoutubeTranscriptApi;
+    default?: YoutubeTranscriptApi;
+  };
+
+  if (module.YoutubeTranscript) {
+    return module.YoutubeTranscript;
+  }
+
+  if (module.default) {
+    return module.default;
+  }
+
+  throw new AppError("YouTube transcript module could not be loaded.");
 }
 
 function buildMetadataOnlyText(params: {
