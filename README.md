@@ -1,57 +1,219 @@
-# Telegram-to-Astro Research Agent
+# DoctorsWhoCode Engine
 
-Online-first research ingestion system for Telegram-driven physician-builder workflows.
+Online-first research ingestion and publishing infrastructure for physician-builders.
 
-## What it does
+DoctorsWhoCode Engine turns Telegram messages into durable research artifacts:
 
-This service accepts Telegram commands such as:
+- source-aware digests
+- archived research records
+- structured summaries
+- Astro-ready MDX drafts
+- PDF exports
+- GitHub-synced draft outputs
+
+It is designed for real physician-builder workflows, not generic chat. A URL, PubMed article, YouTube video, transcript, or note comes in through Telegram. The engine classifies it, normalizes it, analyzes it, stores it in Postgres, and turns it into something reusable.
+
+## Why This Exists
+
+Most research workflows optimize for capture.
+
+This project optimizes for conversion.
+
+The problem is rarely a lack of information. The problem is that saved links, papers, transcripts, and notes never make it all the way to structured understanding, reusable knowledge, or publishable output. DoctorsWhoCode Engine closes that gap.
+
+## What It Does
+
+### Inputs
+
+- plain text
+- webpage URLs
+- PubMed IDs
+- PubMed URLs
+- YouTube URLs
+- pasted transcripts
+- upstream audio transcripts
+
+### Outputs
+
+- `digest`
+- `file`
+- `summarize`
+- `mdx`
+- `pdf`
+
+### Storage and retrieval
+
+- canonical storage in Postgres
+- retrieval by record ID
+- recent-item listing
+- search across saved records
+- curation states and editorial queue views
+
+### Publishing
+
+- MDX draft generation
+- GitHub draft sync
+- PDF export on demand
+- PDF delivery back into Telegram
+
+## How It Works
+
+```text
+Telegram
+  -> ingestion
+  -> normalization
+  -> source-aware analysis
+  -> Postgres storage
+  -> retrieval / curation
+  -> MDX / PDF / GitHub outputs
+```
+
+Every inbound source is normalized before rendering.
+
+That matters because a PubMed abstract is not the same as a full paper, a YouTube title is not the same as a transcript, and a transcript is not the same as a peer-reviewed article. The engine preserves that distinction and reflects it in the output.
+
+## Core Principles
+
+- Online-first persistence is the source of truth.
+- Local files are export artifacts, not the canonical store.
+- GitHub is for draft publishing and curated outputs.
+- Inputs are normalized before any summary or draft generation occurs.
+- Source completeness and provenance are always part of the result.
+
+## Stack
+
+- TypeScript
+- Express
+- Telegram Bot API
+- OpenAI
+- PostgreSQL
+- Railway
+- GitHub
+- Astro / MDX
+- `pdf-lib`
+
+## Current Capabilities
+
+### Research ingestion
+
+- Telegram webhook processing
+- canonical command parsing
+- natural-language intent inference
+- URL ingestion for accessible pages
+- PubMed ingestion
+- YouTube deep analysis with transcript fallbacks
+
+### Research memory
+
+- canonical Postgres record storage
+- `show <id>`
+- `recent`
+- `find` / `search`
+
+### Editorial workflow
+
+- curation states:
+  - `new`
+  - `reviewed`
+  - `drafted`
+  - `publish_ready`
+  - `archived`
+- queue views
+- promotion / demotion commands
+- compound analyze-and-draft workflows
+
+### Publishing workflow
+
+- MDX on demand from saved records
+- DoctorsWhoCode voice-tuned MDX drafting
+- GitHub draft sync
+- PDF on demand from saved records
+
+## Commands
+
+### Canonical actions
 
 - `digest <input>`
 - `file <input>`
 - `summarize <input>`
 - `mdx <input>`
+- `pdf <record-id>`
 
-Supported inputs in v1:
+### Retrieval
 
-- Plain text
-- Webpage URLs
-- PubMed IDs
-- PubMed URLs
-- Pasted transcripts
-- Upstream audio transcripts
+- `show <record-id>`
+- `retrieve <record-id>`
+- `recent`
+- `recent 5`
+- `recent pubmed`
+- `find cerclage`
+- `search physician-builder`
 
-## Architecture
+### Curation
 
-All inbound content is normalized before any rendering occurs.
+- `mark <id> reviewed`
+- `mark <id> drafted`
+- `mark <id> publish_ready`
+- `mark <id> archived`
+- `promote <id> publish_ready`
+- `demote <id> reviewed`
 
-Pipeline:
+### Queue views
 
-1. Telegram webhook receives a message
-2. Command parser resolves the canonical action
-3. Source classifier chooses the correct ingestion adapter
-4. Normalizer creates a provenance-aware record
-5. Action renderer produces digest, archive note, summary, or MDX
-6. Canonical records are persisted to Postgres
-7. Optional export artifacts are written to files and draft-sync targets
-8. Telegram reply returns a concise result or archive confirmation
+- `queue`
+- `queue reviewed`
+- `queue drafted`
+- `queue publish_ready`
+- `queue blog`
+- `queue youtube drafted`
 
-## Local development
+### Compound workflows
 
-1. Copy `.env.example` to `.env`
-2. Set `TELEGRAM_BOT_TOKEN`
-3. Set `OPENAI_API_KEY`
-4. Set `DATABASE_URL`
-5. Optionally set `OPENAI_MODEL`, `OPENAI_TIMEOUT_MS`, `SUPADATA_API_KEY`, `FETCHTRANSCRIPT_API_KEY`, `PORT`, `GITHUB_TOKEN`, `GITHUB_REPO`, and `GITHUB_BRANCH`
-6. Install dependencies with `npm install`
-7. Run `npm run dev`
+- `draft <url-or-source>`
+- `analyze and draft <url-or-source>`
+- `queue for blog <url-or-source>`
 
-## HTTP endpoints
+## Example Workflow
+
+### Quick digest
+
+```text
+digest https://example.com/article
+```
+
+### Archive a paper
+
+```text
+file PMID:39371694
+```
+
+### Deep YouTube analysis
+
+```text
+What can a doctor who codes take away from this? As a cautionary tale https://youtu.be/...
+```
+
+### Generate an MDX draft from a saved record
+
+```text
+mdx 00bbfa8e03e87849
+```
+
+### Export a saved record to PDF
+
+```text
+pdf 00bbfa8e03e87849
+```
+
+## HTTP Endpoints
 
 - `GET /health`
 - `POST /telegram/webhook`
 - `POST /ingest`
 
-`/ingest` is a local debugging endpoint that accepts:
+The `/ingest` endpoint is mainly for local debugging.
+
+Example:
 
 ```json
 {
@@ -59,22 +221,128 @@ Pipeline:
 }
 ```
 
-## Canonical storage
+## Local Development
 
-Canonical records live in Postgres. Local files are exports, not the source of truth.
+### 1. Install dependencies
 
-## Export outputs
+```bash
+npm install
+```
 
-- `archive/records/*.json`
-- `archive/sources/*.md`
-- `archive/summaries/*.md`
-- `archive/transcripts/*.md`
-- `content/blog/*.mdx`
+### 2. Create environment variables
 
-## Notes
+Copy `.env.example` to `.env` and set:
 
-- URL extraction uses `r.jina.ai` for readable webpage text.
-- PubMed extraction uses NCBI E-utilities.
-- Telegram responses are chunked to respect message size constraints.
-- Postgres is the online source of truth for ingestion records and rendered outputs.
-- GitHub sync is reserved for draft publish/curated outputs.
+- `TELEGRAM_BOT_TOKEN`
+- `OPENAI_API_KEY`
+- `DATABASE_URL`
+- `BASE_URL`
+
+Optional:
+
+- `OPENAI_MODEL`
+- `OPENAI_TIMEOUT_MS`
+- `SUPADATA_API_KEY`
+- `FETCHTRANSCRIPT_API_KEY`
+- `GITHUB_TOKEN`
+- `GITHUB_REPO`
+- `GITHUB_BRANCH`
+- `PORT`
+
+### 3. Run locally
+
+```bash
+npm run dev
+```
+
+### 4. Build
+
+```bash
+npm run build
+```
+
+## Deployment Notes
+
+This project is designed to run well on Railway.
+
+- Railway app service hosts the TypeScript service
+- Railway Postgres stores canonical records
+- Telegram points to the Railway webhook
+- GitHub is used for draft-sync publishing outputs
+
+Important architectural note:
+
+- Postgres is the canonical memory layer
+- local filesystem writes are exports only
+
+## Storage Layout
+
+Even though Postgres is canonical, the engine also writes export artifacts to predictable folders:
+
+- `archive/records/`
+- `archive/sources/`
+- `archive/summaries/`
+- `archive/transcripts/`
+- `content/blog/`
+- `output/pdf/`
+
+## Source Handling Notes
+
+- webpage extraction currently uses `r.jina.ai`
+- PubMed extraction uses NCBI E-utilities
+- YouTube uses local transcript retrieval first, then hosted fallback providers
+- Telegram replies are chunked for message-size safety
+- deep analyses are compressed for chat while full outputs are preserved in storage
+
+## Roadmap Status
+
+This repo is already beyond scaffold stage.
+
+Implemented:
+
+- live Telegram ingestion
+- Postgres-backed canonical storage
+- search and retrieval
+- YouTube transcript-backed analysis
+- MDX generation
+- GitHub draft sync
+- PDF export
+- editorial curation workflow
+
+Active next direction:
+
+- stronger queue intelligence
+- more refined search and ranking
+- better publishing workflows
+- continued output and voice tuning
+
+See [ROADMAP.md](./ROADMAP.md), [TODO.md](./TODO.md), [PHASE-3-PLAN.md](./PHASE-3-PLAN.md), and [PHASE-3E-YOUTUBE-DEEP-ANALYSIS.md](./PHASE-3E-YOUTUBE-DEEP-ANALYSIS.md).
+
+## Repository Suggestions
+
+Suggested GitHub repository description:
+
+> Telegram-driven research ingestion, analysis, MDX drafting, PDF export, and editorial workflow infrastructure for physician-builders.
+
+Suggested topics:
+
+- `typescript`
+- `telegram-bot`
+- `research-workflow`
+- `mdx`
+- `astro`
+- `postgres`
+- `railway`
+- `openai`
+- `pubmed`
+- `youtube-transcript`
+- `knowledge-management`
+- `physician-developer`
+- `health-tech`
+- `doctorswhocode`
+
+## Philosophy
+
+This is not a chatbot that happens to summarize links.
+
+It is a physician-builder research pipeline built to make insight durable, queryable, and publishable.
