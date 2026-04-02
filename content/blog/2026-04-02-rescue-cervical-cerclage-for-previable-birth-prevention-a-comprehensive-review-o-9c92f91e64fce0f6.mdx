@@ -1,114 +1,78 @@
 ---
-title: "Rescue Cerclage Needs an Operating System, Not Just a Suture"
+title: "Stop Calling Rescue Cerclage “Last-Ditch”—Build the System That Makes It On-Time"
 slug: "rescue-cervical-cerclage-for-previable-birth-prevention-a-comprehensive-review-o"
-description: "We keep treating rescue cervical cerclage like a one-off hero move instead of building the time-critical workflow it requires."
-pubDate: "2026-04-02T00:03:17.142Z"
-tags: ["obstetrics", "systems", "preterm-birth"]
+description: "Previable birth prevention is a workflow and governance problem, not a hero-surgeon problem, and physicians need to code the pathway into our hospitals and EHRs."
+pubDate: "2026-04-02T00:04:21.197Z"
+tags: ["maternal-fetal-medicine", "clinical-ops", "doctors-who-code"]
 sourceType: "pubmed"
 sourceReference: "PMID:39371694"
 completeness: "abstract_only"
 ---
 
-At 2:14 p.m., a 22-week patient with 2 cm dilation and bulging membranes hits triage.
-Ultrasound confirms the cervix is collapsing.
-We debate room vs OR, anesthesia vs epidural, who can scrub, which suture is stocked, and whether the attending is “comfortable” with Shirodkar.
-Minutes bleed into risk.
+At 19 weeks and change, she rolled in with membranes peeking at the os and no records. Ultrasound, labs, consent, anesthesia, an OR that didn’t exist five minutes ago. We threaded a stitch and bought weeks. We shouldn’t be winging this at 2 a.m. with luck and phone trees.
 
-We call it clinical uncertainty.
-It’s not.
-It’s an architecture problem.
+The usual debate—McDonald vs Shirodkar, tocolysis or not, progesterone after or before—is a distraction. The real variable is time-to-cerclage and system reliability. Rescue cervical cerclage (RCC) works best when we identify the right patient and move without friction. That’s an operations problem pretending to be a surgical one.
 
-A 2024 Cureus review (abstract-only; PMID: 39371694; DOI: 10.7759/cureus.68619) summarizes what many of us know from years at the bedside: rescue cervical cerclage (RCC) can reduce previable birth for the right patient, at the right moment, with the right technique.
-McDonald vs Shirodkar both have a place.
-Risks—like infection and cervical laceration—are real but manageable when the system is tight.
-The science is not perfect, and much of it is observational, but the signal is consistent enough to organize around.
+What the evidence actually says
+- A 2024 Cureus review (abstract-only; PMID: 39371694) reports that RCC reduces previable birth in selected patients with cervical dilation or marked shortening, with risks like infection and cervical laceration. Techniques vary; success varies. Compared with progesterone or “bed rest,” RCC can extend pregnancy when the cervix is failing.
+- That’s the useful core. The rest is heterogeneity and inconsistent criteria. We don’t have a universal algorithm. We have enough signal to act, and we know the harms of delay.
 
-We don’t fail RCC because the knot is hard.
-We fail because we haven’t built the workflow.
+Why the problem persists
+- We don’t run cervical length like a monitored vital sign. No default surveillance, no live alerts, no shared thresholds. So the “rescue” happens late.
+- OR access and anesthesia sit outside OB governance. One “add-on” can become a three-hour wait. Infection risk climbs while we negotiate block time.
+- EHRs lack a single-click pathway. No order set, no consent template, no timeout checklist, no device inventory tracking. Each case starts from zero.
+- Training is variable. Some residents see one prolapsed-membrane case before graduation; others see none. Technique debates substitute for system design.
+- Quality metrics punish preterm birth rates but rarely measure door-to-stitch time, latency gained, or equitable access. Incentives reward documentation, not execution.
 
-The usual framing is “Should we place a cerclage?” as if it’s a philosophical exercise.
-The right framing is “Can we execute a time-critical, high-reliability pathway from first sign of cervical failure to suture pass?”
-That is software-and-operations thinking, not a purely clinical debate.
+What changes when physicians build
+We don’t need another position paper. We need a working pathway, encoded in the EHR and guaranteed by governance. Here’s the minimum viable system.
 
-Why does the problem persist?
-Because our inputs are fragmented and our incentives are misaligned.
+Triggers (automated and human)
+- Gestational age 16–24 weeks with any of: cervical dilation on exam; cervical length ≤10–15 mm with funneling and intact membranes; prior mid-trimester loss suggestive of cervical insufficiency.
+- No fever, no uterine tenderness, no heavy bleeding. Rupture of membranes requires careful selection; probable infection is a hard stop.
 
-- The EHR doesn’t treat cervical length or painless dilation as a code-red trigger. Ultrasound results sit in inboxes. Nobody is paging anesthesia when the cervix hits 10 mm.
-- Indications are policy-light and personality-heavy. One attending’s “too risky” is another’s “go now.” That is governance by vibe.
-- Supply and space are unreliable. The cerclage kit is in a locked cabinet. The right suture isn’t par level. The OR scheduler doesn’t see OB triage in real time.
-- We don’t measure the only metric that matters: time from recognition to suture. If you don’t make time visible, you can’t compress it.
-- There’s no feedback loop. Cases vanish into the ether. No registry, no postmortem, no institutional memory.
+Hard stops (single-screen checklist)
+- Clinical chorioamnionitis; active labor; major hemorrhage; fetal demise; lethal anomaly; maternal instability.
 
-So we stall, while membranes bulge and odds worsen.
-Then we blame the disease.
+One-call activation
+- A single RCC pager/phone that alerts MFM/OB lead, anesthesia, OR charge, ultrasound, and NICU. No serial calls. One page, everyone moves.
 
-Here’s what changes when physicians build.
+Standard kit and room readiness
+- Stocked RCC cart: Mersilene tape, ring forceps, speculum set, bladder catheter, tenaculum, long needle drivers, sponge sticks, balloon-tipped catheter for membrane reduction, antiseptic, antibiotics, tocolytics.
+- Clear protocol for bladder filling vs amnioreduction when membranes are at the os. If amnioreduction is used at your center, script it—don’t improvise.
 
-We ship a cerclage operating system, not a policy PDF.
-That means a protocol expressed as event-driven automation, with explicit governance, and telemetry baked in.
+EHR build (this is the code we control)
+- Best Practice Alert when CL ≤15 mm before 24 weeks or when “cervical dilation” + “intact membranes” documented.
+- RCC order set: labs, antibiotics, tocolysis, analgesia/anesthesia, consent, device pull, pre-op timeout items, postoperative progesterone plan, follow-up ultrasound schedule.
+- Smart phrases for counseling: benefits, risks (infection, rupture, laceration, suture failure), alternatives (progesterone, expectant management), evidence limits.
+- Timer starts at RCC activation; stops when cerclage tied. Write the metric into the flow sheet.
+- Registry fields: GA at stitch, indication, technique (McDonald/Shirodkar), membrane status, adjuncts used, complications, latency days, GA at delivery, neonatal survival. If your system can’t report it, you didn’t build it.
 
-- A single trigger: cervical length <15 mm without contractions, or painless dilation/membrane exposure ≤24 weeks, fires an RCC Fast Path. This is encoded in the EHR, not just a laminated card.
-- Auto-page a cross-covering “cerclage stack”: OB, anesthesia, charge nurse, scrub tech, NICU, and ultrasound. The system assembles the room while humans decide the plan.
-- A prebuilt order set: antibiotics, tocolysis per local practice, analgesia/anesthesia preferences, betadine, indomethacin if indicated, bladder fill or balloon for membrane reduction. No scavenger hunt.
-- A stocked, sealed kit: right suture choices, retractors, tenacula, bladder catheter, sponge sticks, and a sterile condom for membrane reduction. One SKU. Daily check. No exceptions.
-- Technique defaults with gates: McDonald as the default; Shirodkar when exposure or tissue demands. This is decision support, not decision replacement. Document the gate crossed.
-- Time standards: goal <90 minutes from trigger to knife. Visible timer on the tracking board. Cases breaching the time budget trigger an automatic debrief.
-- Consent macros that name real risks plainly—chorioamnionitis, laceration, PPROM—so we don’t sanitize the tradeoffs or slow down in paperwork.
-- Post-procedure telemetry: gestational age at placement, prolongation interval, complications, delivery GA. This rolls into a local registry that updates a live dashboard.
+Clinical sequence (no debate in the hallway)
+- Screen for infection and labor. If clean and eligible, activate RCC.
+- Antibiotics per protocol. Consider tocolysis to quiet an irritable uterus.
+- Choose technique based on anatomy and exposure. McDonald for speed and simplicity; Shirodkar when tissue support and coverage matter. Document why.
+- Handle membranes with intention: Trendelenburg, bladder fill, or controlled amnioreduction if that’s a vetted option at your site.
+- Tie the stitch. Confirm hemostasis. Post-op monitoring. Start or continue progesterone if aligned with your practice.
+- Discharge plan with clear return precautions and follow-up.
 
-Governance matters.
-Codify who can greenlight RCC and under what conditions, and protect that decision with institutional backing.
-If the policy says “OB on-call can proceed on trigger,” then the OB on-call is not left alone to negotiate with an OR board built for elective hernias.
-Tie time-to-cerclage to service-level expectations the OR must meet, not best-effort favors.
+Governance and accountability
+- MFM/OB lead owns the pathway. Periop leadership guarantees “life-of-limb-of-pregnancy” access, with metrics reviewed monthly.
+- Simulation every quarter for triage, setup, membrane reduction, and crisis conversion.
+- Equitable access: community clinics and EDs get the same one-call number and transport protocol. No patient loses days because they live far from your tower.
 
-Incentives matter.
-If your unit reports RCC process metrics to the same execs who track door-to-balloon, you’ll get room access and inventory.
-If it lives as “OB drama,” you won’t.
-Make previable birth prevention a hospital KPI with a named owner.
+Measure what matters
+- Door-to-stitch time (target ≤90 minutes from activation).
+- Latency days gained.
+- GA at delivery.
+- Maternal infection and cervical laceration rates.
+- Neonatal survival to discharge.
+- Case mix and equity by zip code and insurance.
 
-Data matters.
-We don’t need another 30-page guideline.
-We need a small, open registry with fields we actually use.
-Abstract-only reviews, like the Cureus paper cited here, help summarize indications, techniques, and outcomes, but they won’t reorganize a hospital.
-Physician-builders will.
-Start with N=every case, not N=perfect publication.
-Share de-identified metrics with neighboring systems and learn faster than journals can publish.
+What we don’t know—and what we don’t need to wait for
+- The Cureus review is abstract-only. Technique superiority and exact selection thresholds remain heterogeneous across studies. Fine. We can still standardize triggers, hard stops, and execution.
+- We don’t need a new RCT to fix paging trees, empty carts, or missing order sets. That is ops debt, not science.
 
-Technique matters, but only after the system launches you into the room.
-McDonald vs Shirodkar is a clinical choice based on anatomy, exposure, and membrane behavior.
-The review notes both are viable with tradeoffs and lists known complications like infection and laceration.
-That matches lived practice.
-What widens the delta is not a suture brand; it’s a pathway that preserves the hour when the intervention still works.
+When physicians build, the stitch stops being heroic and starts being reliable. We take variability out of the hallway and put it into a controlled checklist. We encode clinical judgment into an activation pathway that moves faster than doubt and slower than recklessness.
 
-Stop romanticizing “clinical judgment” while starving it of infrastructure.
-Judgment operates on the runway we build.
-
-Here’s a starter spec you can ship in 30 days:
-
-- Build an RCC Fast Path in your EHR that fires on cervical length and dilation criteria.
-- Stand up a sealed cerclage kit with daily check and documented backup location.
-- Publish a one-page technique gate with images. Default McDonald; gate to Shirodkar when exposure is limited or cervix is scarred.
-- Define time-to-cerclage as a unit metric. Track it publicly on your board.
-- Automate a next-day 10-minute debrief for every case, hit or miss.
-- Launch a simple registry: placement GA, indication, technique, antibiotics, complications, prolongation, delivery GA. Trend monthly. Share anonymized aggregates.
-
-If you code, don’t wait for a vendor.
-Use your system’s rules engine to wire the trigger.
-Spin up a FHIR subscription for critical ultrasound results.
-Post to a secure webhook that alerts the team.
-If you don’t code, find the colleague who does and give them the map.
-This is not moonshot software.
-It’s wiring and will.
-
-Limitations and honesty:
-The Cureus review that prompted this piece is abstract-only.
-It reports RCC efficacy in selected patients, outlines McDonald and Shirodkar techniques, and acknowledges risks like infection and cervical laceration.
-Comparisons to progesterone and bed rest are described, but details are not visible without full text.
-That’s fine.
-The uncertainty argues for better local data capture and faster learning, not for inertia.
-
-Physicians built neonatal ICU standards, trauma activations, and stroke alerts because we refused to accept chaos as a feature.
-Rescue cerclage deserves the same discipline.
-Build the path of least resistance to the suture, instrument it, and hold it to time.
-That’s our job.
-No one is coming to do it for us.
+This is our agency. If previable birth is a tragedy, then friction is a choice. Build the pathway, wire it into the EHR, own the metrics, and audit the misses. The future of medicine is not better opinions about cerclage—it’s better systems that make the right care inevitable.
