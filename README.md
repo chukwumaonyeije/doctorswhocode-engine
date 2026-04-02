@@ -13,6 +13,8 @@ DoctorsWhoCode Engine turns Telegram messages into durable research artifacts:
 - PDF exports
 - GitHub-synced draft outputs
 
+Live today: Telegram ingestion, YouTube transcript-backed analysis, Postgres memory, MDX draft generation, PDF export, GitHub draft sync, search, retrieval, and editorial queue workflows.
+
 It is designed for real physician-builder workflows, not generic chat. A URL, PubMed article, YouTube video, transcript, or note comes in through Telegram. The engine classifies it, normalizes it, analyzes it, stores it in Postgres, and turns it into something reusable.
 
 ## Getting Started
@@ -47,7 +49,7 @@ This project optimizes for conversion.
 
 The problem is rarely a lack of information. The problem is that saved links, papers, transcripts, and notes never make it all the way to structured understanding, reusable knowledge, or publishable output. DoctorsWhoCode Engine closes that gap.
 
-## What It Does
+## Capabilities
 
 ### Inputs
 
