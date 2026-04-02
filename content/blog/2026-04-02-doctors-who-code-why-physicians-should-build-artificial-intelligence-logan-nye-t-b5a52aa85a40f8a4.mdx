@@ -1,0 +1,78 @@
+---
+title: "Doctors Who Code, or Doctors Who Ship? A Hard Look at a TEDx Pitch on Physician-Built AI"
+slug: "doctors-who-code-why-physicians-should-build-artificial-intelligence-logan-nye-t"
+description: "A TEDx talk argues physicians should build AI; the claim is right in spirit but weak on structure, evidence, and deployment."
+pubDate: "2026-04-02T01:12:06.468Z"
+tags: ["clinical-ai", "youtube-analysis", "physician-developer"]
+sourceType: "transcript"
+sourceReference: "https://youtu.be/Et5HC8SR0BA?si=QHcchnjRerAQe7mT"
+completeness: "transcript_only"
+---
+
+A pediatric wrist X‑ray can look “normal” and still hide a buckle fracture. In the talk reviewed here, the speaker says a doctor who codes can spot it and spin up a model in an afternoon. That hook lands. But the hard part in medicine isn’t spotting the wrinkle; it’s shipping trustworthy systems that change care and survive governance.
+
+What this is
+- A deep analysis of a TEDxBoston talk: “Doctors Who Code: Why Physicians Should Build Artificial Intelligence | Logan Nye” (YouTube: https://youtu.be/Et5HC8SR0BA).
+- Source basis: transcript only. I do not have full-video access. Claims are taken from the transcript, which includes examples and performance numbers as stated by the speaker.
+
+Core claim
+- Physicians should build AI directly. When clinicians code, they collapse the gap between domain knowledge and implementation, unlock image-classification gains, and extend expertise to low-resource settings via smartphones.
+
+What appears to be in the video
+- A physician–researcher at Harvard/MGH argues that clinical insight plus coding beats the usual developer–expert split.
+- Examples from their lab:
+  - Pathology: distinguishing enchondroma vs low‑grade chondrosarcoma. Claimed improvement from ~50% human accuracy to 75–90% with a computer vision model “built in an afternoon.”
+  - Musculoskeletal imaging: MRI ACL tear detection and partial vs complete tear classification.
+  - Fracture detection across wrist, arm, foot, ankle, hip; lumbar disc herniation localization; knee osteoarthritis quantification to time arthroplasty.
+  - Expansion to >30 soft‑tissue tumors and >15 bone tumors.
+  - Use of generative AI to synthesize histology for rare diseases to overcome data scarcity.
+- Global health angle: clinicians in remote settings may lack specialists but have smartphones and iPads. Open-sourced apps/APIs could “democratize” expertise.
+
+Verified vs unverified
+- Verified (from transcript and general field knowledge):
+  - The talk exists and promotes physician-built AI.
+  - Computer vision can classify radiology and pathology images at or above specialist level in some settings; this is supported by peer-reviewed literature in select tasks.
+  - Smartphone penetration in low-resource settings is high; mobile-first clinical tools are feasible.
+- Unverified (claims not independently confirmed here):
+  - Specific accuracy jumps (50% to 75–90%) for enchondroma vs low-grade chondrosarcoma; dataset size, ground truthing, validation design, and external test performance are not provided.
+  - Breadth and readiness of the listed models (fractures, discs, OA quantification, >45 tumor types) for clinical deployment. No regulatory status, QMS, or post-deployment performance cited.
+  - Safety, bias, and generalizability of generative histology data. No evidence of prospective trials, multi-site validation, or drift monitoring.
+  - “Built in an afternoon” likely describes a prototype, not a clinically safe, validated device.
+
+Physician-developer takeaway
+- The instinct is right: put clinicians at the keyboard. The usual pipeline—engineers far from the bedside, models judged on abstract AUCs, and no ownership of integration—keeps useful tools off the ward.
+- But the real leverage point isn’t a notebook model. It’s the system: data access, ground truth governance, validation design, workflow fit, safety monitoring, and accountability. If we don’t own that stack, the model’s “accuracy” won’t matter.
+
+Critical flags
+- Ground truth ambiguity. Enchondroma vs low‑grade chondrosarcoma is a known gray zone even among expert pathologists. If the label is unstable, a reported accuracy can be illusory. Consensus, adjudication, and outcome-linked labels matter.
+- Prototype vs product. “Afternoon” models skip IRB, quality management, human factors, and FDA pathways. That’s fine for research; it’s dangerous if implied as a clinical path.
+- Synthetic data risk. Generative slides can fill gaps, but they also encode and amplify biases, collapse variation, and contaminate test sets if not firewalled. Without stringent provenance and audits, you can overfit to your own creations.
+- Equity by smartphone is not automatic. Camera quality, lighting, bandwidth, language, and clinical context control performance. Safety nets for false negatives in remote care are governance questions, not model architecture.
+- Missing workflow reality. EHR integration, alert fatigue, medico-legal responsibility, and billing incentives decide adoption. Models that ignore these get sidelined or create new failure modes.
+- No post-deployment plan. Who monitors drift? Who owns incidents? How are updates validated? Without this, you’re shipping a risk, not a tool.
+
+Why this problem persists
+- Architecture: Data are locked in vendor silos. Labels are inconsistent, and ground truth is often a PDF pathology note, not a structured ontology.
+- Workflow: Tools are built around publications, not nurse triage, prior auth, or OR scheduling. If it doesn’t save clicks or minutes, it dies.
+- Incentives: Academia rewards papers and AUCs, not downtime budgets, incident response, or change management. Vendors reward upsell, not openness.
+- Governance: IRBs and compliance teams see models as hazards, not assets, because we’ve given them prototypes without safety cases.
+
+What changes when physicians build
+- We pick problems that move throughput and outcomes, not leaderboards. We define ground truth with adjudication and tie it to decisions that matter.
+- We design for the last mile: orders, notes, routing, and handoffs. We stand up model cards, monitoring, and rollback plans because our names are on the chart.
+- We write code, but we also write policy: data use agreements, label standards, and escalation paths. That’s how tools survive contact with clinical reality.
+
+Recommended next step
+- Choose one narrow, high-friction task where labels are defensible and utility is direct. Example: automated detection and structured reporting of pediatric buckle fractures with embedded discharge instructions.
+- Ship a thin vertical slice end to end:
+  - Data: define inclusion, exclusion, and clear ground truth; run consensus labeling with adjudication; log provenance.
+  - Model: baseline, ablation, fairness slices; lock a preregistered evaluation; hold out an external site.
+  - Workflow: embed inside the reporting workflow; surface recommendations with one-click acceptance and audit trails.
+  - Governance: IRB, privacy threat model, model card, incident response, monitoring for drift; align with FDA SaMD guidance if applicable.
+  - Outcomes: measure turnaround time, downstream imaging, return visits, and safety events. Publish the full stack, not just the AUC.
+- Open-source what you can: label schema, de-identified samples, evaluation harness, and monitoring playbook. Keep the deployment-specific glue private if you must, but don’t hide your safety case.
+- Form a physician–engineer–ops triad. Meet weekly. Own the pager. If you won’t carry the beeper for your model, don’t ship it.
+
+Conclusion
+- Physicians should build AI, but more importantly, physicians should ship systems. Our responsibility isn’t a demo; it’s dependable care.
+- The future of medicine belongs to clinicians who code and govern—who can turn a clever classifier into a safe, auditable, workflow-native service. That’s agency. That’s how we stop admiring the problem and start fixing the system.
