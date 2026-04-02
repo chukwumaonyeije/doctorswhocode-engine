@@ -1,76 +1,99 @@
 ---
-title: "Build the Triad: Clinician, Patient, AI"
+title: "Stop Policing Patient AI. Start Designing for It."
 slug: "title-patientsuseai-criticalaihealthliteracy-participatorymedicine-gilles-frydma"
-description: "Patients are already arriving with AI-written plans; pretending they need permission is not safety—it’s governance failure."
-pubDate: "2026-04-02T08:20:57.203Z"
-tags: ["ai-in-clinics", "workflow-architecture", "participatory-medicine"]
+description: "Patients already bring AI-generated interpretations and plans; the bottleneck isn’t safety, it’s our refusal to architect care to ingest and audit them."
+pubDate: "2026-04-02T08:21:57.336Z"
+tags: ["clinical-architecture", "patient-agency", "ai-in-practice"]
 sourceType: "webpage"
 sourceReference: "https://www.linkedin.com/posts/gillesfrydman_patientsuseai-criticalaihealthliteracy-participatorymedicine-share-7445083881248215040-l_7s?utm_source=social_share_send&utm_medium=android_app&rcm=ACoAAAFk0msBz06d8NjCKdaF4KEy2c0_hxoW5tc&utm_campaign=share_via"
 completeness: "full_text"
 ---
 
-8:12 a.m., room three. A patient hands me a five‑page AI summary, direct‑to‑consumer labs, and a proposed treatment plan. Not questions—decisions. If your clinic isn’t built for that moment, the problem is not the patient. It’s your system.
+A patient walks in with a ChatGPT summary, a differential, and a stepwise plan they intend to follow. Not “I Googled this.” A compressed judgment with citations, thresholds, and a preferred imaging study booked at a cash lab. We can pretend this is fringe. It isn’t.
 
-We keep arguing whether patients should use AI. They already do. As Gilles Frydman highlighted, a recent Lancet comment by Sara Riggare and colleagues argues the obvious: stop treating patient‑directed AI as a problem to manage and start engaging it as reality. Their line is clear—triadic care is the new baseline: clinician, patient, AI, all present. That matches the exam room.
+The usual framing says “misinformation risk.” That’s too small. This is an architecture problem. We built clinics, EHRs, billing, and governance for a dyad. Care is now triadic: patient, clinician, AI. Our systems still only seat two.
 
-The usual framing—“guardrails first,” “wait for evidence”—hides a deeper issue. This is not a safety debate. It’s an architecture, workflow, incentive, and governance failure. Safety is the output of those systems, not a feeling we invoke to stall.
+Gilles Frydman flagged a Lancet comment that states the obvious with overdue clarity: patients are not waiting for permission to use AI. He also points to a 2025 review in primary care that, reportedly, found zero studies of how patients actually use large language models. Zero. I have not independently verified that review; if true, it’s damning and explains why our policies feel unmoored from reality.
 
-Provenance, not platitudes
-- The Lancet piece is a comment, not a randomized trial. It points to a gap we created: we haven’t even studied how patients actually use large language models. Frydman notes a 2025 primary care review found no studies on real patient LLM use. I have not independently verified that review, but it tracks with what we see daily and with the silence of our own IRBs and journals on lived patient practice.
-- Meanwhile, clinicians adopt AI for notes and coding, while discouraging patients from using the same tools. That isn’t risk management. That’s paternalism rebranded.
+Let’s name the structural blockers:
+- Payment rewards volume, not synthesis. There’s no routine place to bill time spent auditing patient-supplied reasoning.
+- EHRs treat outside text like biohazard. Free text gets quarantined, red flags don’t auto-surface, provenance is lost.
+- Risk management punishes engagement with third-party outputs. The safest note is “patient advised against online advice,” even when the advice is sensible.
+- Governance is paternalistic by design. Committees that greenlight clinician AI ban patient AI in the same breath.
+- Research avoids the messy middle. IRBs see “patients using AI” as a subject risk, not a chance to co-produce knowledge.
 
-Why the asymmetry persists
-- Payment: CPT pays for physician keystrokes and clicks, not for integrating patient‑generated analysis. There’s no code for “reviewed patient AI plan and reconciled risk,” so we pretend it doesn’t exist.
-- Workflow: 15‑minute slots and inbox metrics punish any conversation that starts with “I brought a plan.” We optimized throughput, not understanding.
-- EHR architecture: portals are read‑mostly. Patient uploads arrive as orphaned PDFs with no provenance, no source model, and no structured linkage to ClinicalImpression. Garbage in, liability out.
-- Governance: compliance bans “unvetted tools” while allowing the same models behind vendor badges. Liability is contained by control, not by verification.
-- Research gatekeeping: IRBs treat patient AI as off‑protocol exposure. We over‑protect the study and under‑observe the world.
+What’s new isn’t “empowered patients.” We’ve had that since WebMD. What’s new is decision compression. Generative tools turn scattered facts into an actionable plan before the visit. Add direct-to-consumer testing and you get patients arriving with data, interpretation, and intent. That shifts the locus of control whether we like it or not.
 
-What changes when physicians build
-- We stop fighting the last war (portals) and design for the present (decisions compressed by AI). As Yoram Friedman, MD, put it in the thread: AI doesn’t just inform; it compresses judgment. Patients aren’t just informed—they arrive with a plan. Our systems must be able to ingest, interrogate, and either adopt or overturn that plan on record.
+Safety matters. But “guardrails first” has become an excuse for stasis. We can build for safety and agency at once. That starts with admitting the knowledge monopoly is gone and designing the visit around that truth.
 
-A triadic care architecture that works
-- Expect the triad: Appointments and pre‑visit flows should assume an AI‑informed patient. Put it in the schedule template and rooming script: “Please share any AI summaries or plans you prepared.”
-- Structured intake, not screenshots: Offer a patient‑facing intake that guides safe prompting and produces a structured output. Think Questionnaire + QuestionnaireResponse in FHIR with fields for symptoms, goals, red‑flags addressed, and cited sources.
-- Provenance by default: Every uploaded plan enters as DocumentReference with extensions for aiGenerated=true, model name/version, prompt hash, timestamp, and declared sources. No provenance, no clinical use.
-- Triage microservice, not vibes: Run the patient plan through a service that:
-  - Maps entities to SNOMED/LOINC/ICD
-  - Scores for guideline concordance and missing safety checks
-  - Flags meds/interactions and contraindications
-  - Surfaces citations and uncertainty
-  Output lands in a ClinicalImpression draft with linkages to the patient document.
-- In‑visit triad script: “Show me your plan. Here’s what it gets right. Here’s what’s missing. Here’s our shared plan and why.” We record delta‑reasoning, not just a checkbox that we “reviewed external materials.”
-- Billing and policy alignment now: Use 99421‑99423 (e‑visit), 99358‑99359 (prolonged non‑face‑to‑face), and 99457 (time on remote management) where appropriate to pay for asynchronous review. Then push payers for a pilot code: “AI‑informed intake review and reconciliation.” Payment signals culture.
-- Safety is a library, not a lecture: Maintain a living “contraindication catalog” where the clinic defines domains where LLMs are brittle (e.g., drug dosing, rare disease heuristics, pregnancy‑specific nuances). The triage microservice checks against that catalog and blocks unsafe automation.
-- Patient education with accountability: Publish short clinician‑authored modules on critical AI health literacy. Teach patients how to ask for sources, how to name uncertainty, and when to stop and call. Put our names on it.
+Here’s the minimum viable architecture for triadic care.
 
-A 30‑day blueprint any practice can ship
-- Week 1:
-  - Add “AI summary?” to pre‑visit reminders and rooming checklists.
-  - Stand up a basic SMART‑on‑FHIR app that accepts patient uploads as DocumentReference with provenance fields.
-- Week 2:
-  - Build a rules file of clinic red‑flags and must‑asks by condition. Wire it to highlight gaps in any patient plan.
-  - Draft the triad visit script and document template for ClinicalImpression deltas.
-- Week 3:
-  - Train MAs to collect and route AI plans. Train clinicians to respond with the script, not defensiveness.
-  - Turn on billing for asynchronous review where justified. Track time. Submit clean claims.
-- Week 4:
-  - Publish two patient micro‑modules: “When AI is helpful” and “When to stop and call.” Link them in appointment reminders.
-  - Start a weekly review of flagged cases. Improve the rules. Keep shipping.
+- Create a visit type: AI-informed consult
+  - Schedule with a pre-visit review block.
+  - Make plan reconciliation the primary goal, not reenacting HPI theater.
 
-What about risk?
-- Risk is unmanaged when we push AI use into the parking lot and pretend it isn’t already shaping decisions. Accountability requires visibility. Visibility requires architecture.
-- Hallucinations are real. So are rushed clinicians, copy‑forward, and orphaned PDFs. We already practice in risk. The question is whether we design systems that expose it early and document our corrections.
+- Ingest patient AI outputs as structured data
+  - Accept a short “reasoning bundle” before the visit with fields we can parse.
+  - Keep provenance: model name, version, timestamp, prompt.
 
-Stop waiting for permission
-Patient portals didn’t change the power dynamic because we never rebuilt the workflow, the payment, or the record to acknowledge patient agency. We gave patients a window and kept the keys. This is different because the decisions are arriving pre‑compressed. If we don’t meet that reality with systems, we will either rubber‑stamp bad plans or waste the visit unwinding them without record, reimbursement, or learning.
+Example intake skeleton (keep it boring, keep it parseable):
+- patient_goals: top 3
+- symptoms: timeline, severity, red flags checked yes/no
+- working_hypotheses: list with confidence 0–1
+- key_evidence: labs/imaging with source links
+- uncertainties: what would change the plan
+- model_meta: model name, version, date, prompt hash, links
 
-The Lancet comment by Riggare et al (as flagged by Frydman) asks medicine to accept the end of the knowledge monopoly and to build for triadic care. That’s the right ask. We can do it now with boring tools—FHIR, templates, scripts, and governance that treats patients as full participants.
+- Build a two-pane view in the chart
+  - Left: patient/AI claims and plan. Right: clinician assessment and reconciled plan.
+  - Auto-highlight conflicts and missing data. Generate explicit “accepted,” “modified,” “rejected” markers with rationale.
 
-Physicians built the safety systems for surgery, transfusion, and chemo. We didn’t outsource that responsibility to vendors or committees alone. AI in the clinic deserves the same posture. Build the triad. Put provenance in the record. Pay for the review. Teach patients how to use the tool. Then practice medicine—eyes open, together.
+- Codify consent and documentation
+  - One-click consent: “We discussed third-party AI outputs; I reviewed, verified critical elements, and documented reconciliation.”
+  - Log the model and prompt. Paste the reasoning bundle to a non-billable, non-indexed attachment with a human-readable summary in the note.
 
-Provenance note: This essay draws on a LinkedIn post by Gilles Frydman that references a Lancet comment by Sara Riggare and colleagues on AI‑empowered patients, and includes community observations about how visits are changing. The Lancet piece is a comment, not original trial data. The claim about a 2025 review finding no studies of patient LLM use is from Frydman’s summary; I have not independently reviewed that specific paper. The argument here rests on current clinical reality and the visible gaps in our systems. Links:
-- Frydman post: https://www.linkedin.com/posts/gillesfrydman_patientsuseai-criticalaihealthliteracy-participatorymedicine-share-7445083881248215040-l_7s
-- Lancet comment (Riggare et al.): https://www.thelancet.com/journals/lanprc/article/PIIS3050-5143(26)00007-5/fulltext
+- Ship safety prompts, not scolds
+  - Inline checks tied to red flags: “If X + Y, escalate now.” Not modal nags.
+  - Default to ordering verification, not duplication. If patient brings clean, recent labs, justify repeats.
 
-Our agency is the point. We either design for how patients actually act, or we abdicate the future of medicine to tools and intermediaries that don’t answer to patients or to us.
+- Align with existing billing without gamesmanship
+  - Use recognized data-review and prolonged-service pathways where appropriate.
+  - If your payer mix blocks this, escalate as an operational risk: uncompensated safety work.
+
+- Measure what matters
+  - Plan convergence time (minutes to aligned plan).
+  - Avoidable duplicate testing rate.
+  - Patient-reported understanding and confidence post-visit.
+  - Near-miss and harm attribution that explicitly tags third-party AI and clinician reconciliation steps.
+
+- Train both sides
+  - Clinician micro-skills: fast provenance check, bias spotting, uncertainty surfacing, respectful plan negotiation.
+  - Patient one-pager: how to bring an AI plan that’s auditable, not a wall of text.
+
+- Governance that fits the work
+  - Approve “triadic visit” as a standard modality.
+  - Require model provenance logging, not model pre-approval for patients.
+  - Stand up a near-miss registry for AI-involved cases with a blameless review loop.
+
+If you’re a physician who codes, this is buildable in 90 days.
+
+- 0–30 days
+  - Define the intake spec and the two-pane UI.
+  - Add a lightweight consent macro and provenance fields to your note template.
+  - Pilot with one clinic, five clinicians, and willing patients.
+
+- 31–60 days
+  - Wire alerts for red-flag mismatches.
+  - Stand up a minimal registry for outcomes and near-misses.
+  - Present to risk leadership with real cases and early metrics.
+
+- 61–90 days
+  - Publish the intake spec and templates openly.
+  - Expand to additional clinics. File payer test claims with clear documentation of non-face-to-face review time where applicable.
+  - Share the safety data, not marketing slides.
+
+Provenance and limits matter. The Lancet piece referenced by Frydman argues clinicians should welcome AI-informed patients and accept triadic care as the new baseline. I agree with the direction. The claim about a 2025 primary care review finding no studies of patient LLM use comes via his post; I haven’t audited the review. Regardless, the clinic is already telling us the story: patients are compressing judgment before they see us. Our systems are the bottleneck.
+
+When physicians build, the conversation changes. We stop gatekeeping and start governing. We replace paternalism with auditable process. We reduce risk by making patient reasoning visible, not by pretending it doesn’t exist.
+
+The conclusion is simple. Agency has shifted. Our responsibility is to design care that recognizes it. If we don’t, payers and platforms will design it for us—and not in the patient’s or the clinician’s interest.
