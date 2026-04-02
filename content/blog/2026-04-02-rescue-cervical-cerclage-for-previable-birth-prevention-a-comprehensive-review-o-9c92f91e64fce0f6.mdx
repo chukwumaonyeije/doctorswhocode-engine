@@ -1,0 +1,85 @@
+---
+title: "Rescue Cerclage Is a Systems Problem"
+slug: "rescue-cervical-cerclage-for-previable-birth-prevention-a-comprehensive-review-o"
+description: "Rescue cerclage works when the pathway is tight; we keep losing pregnancies to process debt, not pathophysiology."
+pubDate: "2026-04-02T00:01:27.705Z"
+tags: ["obstetrics", "systems-engineering", "doctors-who-code"]
+sourceType: "pubmed"
+sourceReference: "PMID:39371694"
+completeness: "abstract_only"
+---
+
+A resident calls from triage: 19+5, dilated 2 cm, membranes visible. Ultrasound is done. Then we stall. MFM sign-off, anesthesia availability, consent hunt, OR slot roulette. The cervix does not wait for our governance.
+
+We talk about rescue cerclage like it’s a controversial art. It isn’t. It’s a time-sensitive, selection-sensitive procedure that fails most often because the system is slow, variable, and unclear about who owns the clock.
+
+What the evidence says (and doesn’t)
+- A 2024 Cureus review (PMID: 39371694) summarizes rescue cervical cerclage (RCC): indications, techniques (McDonald, Shirodkar), and outcomes versus alternatives like progesterone or “bed rest.” It concludes RCC reduces previable births in selected patients, with known risks (infection, cervical laceration).
+- Provenance matters: I only have the abstract, not full text. The review appears narrative, not a pre-registered meta-analysis. The underlying studies are historically heterogeneous. That limits precision on effect size and technique superiority.
+- Even with partial evidence, two points are stable in credible obstetric practice: selection matters (true incompetence/short cervix; no chorio; no active labor; intact membranes when possible), and time to suture matters. Bed rest is a policy, not a therapy. Progesterone has its place, but it is not a real-time rescue.
+
+The real bottleneck
+We keep debating McDonald vs Shirodkar while patients age out of the window. The bottleneck is not suture choice. It’s architecture:
+- No standard “RCC rapid” pathway. Every case becomes a bespoke production.
+- Gatekeeping uncertainty: who can greenlight? MFM? OB on call? Committee by phone?
+- OR scheduling not designed for non-cesarean obstetric emergencies.
+- EHR friction: no single-click bundle for labs, antibiotics, tocolysis, anesthesia page, consent, and documentation.
+- No prebuilt instrument kit. Staff scramble for tape, speculum, ring forceps, balloons for membrane reduction.
+- Legal fear drives delay masked as “due diligence.” Delay is a decision with a body count.
+
+When physicians build, speed becomes default and variation shrinks
+This is not about heroics. It’s about shipping a reliable pipeline that makes the right thing easy and the wrong thing obvious.
+
+RCC Rapid blueprint (v0.1)
+- Trigger criteria (any one auto-pages the team):
+  - Cervical dilation 1–3 cm with visible or bulging membranes before viability, no chorioamnionitis signs, no active labor.
+  - Cervical length below a hard threshold (e.g., ≤10–15 mm) with funneling in a patient with compatible history.
+- Hard stops:
+  - Fever, uterine tenderness, foul discharge, ruptured membranes confirmed, or progressive contractions unresponsive to initial tocolysis. If present, move to the alternative pathway (expectant management or induction per gestational age and maternal status).
+- One-click EHR bundle:
+  - Orders: type and screen, CBC, urinalysis if needed, prophylactic antibiotics per local protocol, tocolysis (indomethacin or nifedipine per gestational age/contraindications), anesthesia evaluation.
+  - Consent: prebuilt language covering indications, alternatives (including progesterone, no intervention), risks (infection, PPROM, laceration), and uncertain long-term neonatal outcomes.
+  - Auto-page: OB/MFM, anesthesia, charge nurse, NICU consult if approaching viability.
+- Standard kit in L&D:
+  - Mersilene tape (or preferred suture), speculum, ring forceps, tenaculum, appropriate retractors, foley/balloon for membrane reduction, long instruments, antiseptic, uterotonic/tocolytic set, bladder catheterization supplies.
+- Time goal:
+  - Door-to-cerclage start ≤90 minutes from qualifying ultrasound or exam. Time visible on a shared board. If missed, a brief root cause is required before sign-out.
+- Technique governance:
+  - McDonald is default unless patient anatomy or prior cerclage argues for Shirodkar. Technique choice is documented with rationale. No committee. One owner surgeon.
+- Perioperative standards:
+  - Prophylactic antibiotics per protocol, tocolysis as indicated, sterile technique, membrane reduction strategy predefined, ultrasound guidance available when helpful.
+- Post-op:
+  - Standard monitoring, infection surveillance, progesterone plan if indicated, clear return precautions. Automatic follow-up scheduled.
+- Simulation and uptime:
+  - Quarterly RCC drills across OB, anesthesia, nursing. Kit restocked weekly with barcode check. New staff credentialed via sim, not just policy signatures.
+
+Data or it didn’t happen
+If we want to move beyond narrative reviews, we have to generate structured, sharable data. That’s on us.
+
+- Minimum dataset (FHIR-friendly):
+  - Observation.cervicalLength (mm), gestational age (days), dilation (cm), membranes status, infection markers, tocolysis given, antibiotic given, technique used, suture type, time stamps (trigger, decision, incision), complications, latency to delivery, neonatal outcomes.
+- Dashboard:
+  - Monthly run chart of door-to-cerclage time, eligibility vs performed, infection rate, PPROM within 7 days, median latency, live birth beyond viability.
+- Registry:
+  - Open protocol, IRB-ready, multi-site opt-in. Pre-specify analyses we actually need: time-to-cerclage vs latency, technique by anatomy, risk-adjusted outcomes. Export de-identified data, publish methods, not marketing.
+- Decision support:
+  - EHR rule that surfaces prior second-trimester losses and current cervix metrics at intake. It doesn’t “recommend surgery.” It reduces misses.
+
+Why this persists
+Hospitals are optimized for billing predictability and surgical block ownership, not obstetric edge cases. Liability language is optimized for “avoid action,” not “avoid delay.” EHRs ship features, not pathways. In that environment, every RCC is an exception, and exceptions die on the vine.
+
+We can keep debating literature hierarchies while the system remains designed for no. Or we can redesign the system so a well-selected yes happens quickly, safely, and repeatably.
+
+What changes when we build
+- Eligibility is clear. Ownership is clear. Time is tracked.
+- The patient gets a fair shot at latency, not a coin flip based on who’s on call.
+- We create the data we wish we had, instead of lamenting that “evidence is limited.”
+
+Provenance and limits
+- This argument draws on an abstract-only Cureus review (PMID: 39371694; September 2024) plus standard clinical practice. The review reports benefit of RCC in selected patients and notes technique variation and complications. Without full-text methods, pooled effect sizes and direct technique comparisons should be treated as uncertain.
+- That uncertainty is the point: build the registry, standardize the pathway, and answer the questions with real-world, prospective data.
+
+Conclusion
+Rescue cerclage is not a heroic maneuver. It’s a pipeline problem. If we keep accepting friction as fate, we’ll keep losing pregnancies we could have saved.
+
+Physicians who code and build have the tools to fix this. Ship the pathway. Instrument the data. Own the latency. That’s how we practice medicine worthy of the patients who trust us with their time.
