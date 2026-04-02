@@ -29,6 +29,11 @@ export function parseCommand(text: string): ParsedCommand {
     return retrievalCommand;
   }
 
+  const queueViewCommand = parseQueueViewCommand(trimmed);
+  if (queueViewCommand) {
+    return queueViewCommand;
+  }
+
   const queueCommand = parseQueueCommand(trimmed);
   if (queueCommand) {
     return queueCommand;
@@ -288,6 +293,22 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     };
   }
 
+  const promoteMatch = text.match(/^(?:promote|demote)\s+([a-f0-9]{8,32})\s+(new|reviewed|drafted|publish_ready|publish-ready|archived)$/i);
+  if (promoteMatch) {
+    return {
+      valid: true,
+      action: "curate",
+      input: promoteMatch[1],
+      intentLabel: "curation_update",
+      rawRequest: text,
+      analysisMode: "default",
+      curationOptions: {
+        recordId: promoteMatch[1],
+        status: normalizeCurationStatus(promoteMatch[2])!
+      }
+    };
+  }
+
   const searchMatch = text.match(/^(?:find|search)\s+(.+)$/i);
   if (searchMatch) {
     const rawTerms = searchMatch[1].trim();
@@ -431,6 +452,54 @@ function parseQueueCommand(text: string): ParsedCommand | null {
   };
 }
 
+function parseQueueViewCommand(text: string): ParsedCommand | null {
+  const queueMatch = text.match(/^queue(?:\s+(.+))?$/i);
+  if (!queueMatch) {
+    return null;
+  }
+
+  const rawTerms = queueMatch[1]?.trim() ?? "";
+  const parts = rawTerms ? rawTerms.split(/\s+/) : [];
+  let limit: number | undefined;
+  let sourceType: SourceType | undefined;
+  const statuses: CurationStatus[] = [];
+
+  for (const part of parts) {
+    if (!limit && /^\d+$/.test(part)) {
+      limit = Number(part);
+      continue;
+    }
+
+    const normalizedSource = normalizeSourceType(part);
+    if (!sourceType && normalizedSource) {
+      sourceType = normalizedSource;
+      continue;
+    }
+
+    const normalizedStatus = normalizeQueueStatus(part);
+    if (normalizedStatus) {
+      statuses.push(normalizedStatus);
+      continue;
+    }
+
+    return null;
+  }
+
+  return {
+    valid: true,
+    action: "queue_view",
+    input: "queue",
+    intentLabel: "editorial_queue",
+    rawRequest: text,
+    analysisMode: "default",
+    retrievalOptions: {
+      limit,
+      sourceType,
+      curationStatuses: statuses.length > 0 ? [...new Set(statuses)] : undefined
+    }
+  };
+}
+
 function normalizeSourceType(value: string): SourceType | undefined {
   const normalized = value.toLowerCase();
   const allowed: SourceType[] = [
@@ -450,4 +519,19 @@ function normalizeCurationStatus(value: string): CurationStatus | undefined {
   const normalized = value.toLowerCase().replace(/-/g, "_");
   const allowed: CurationStatus[] = ["new", "reviewed", "drafted", "publish_ready", "archived"];
   return allowed.includes(normalized as CurationStatus) ? (normalized as CurationStatus) : undefined;
+}
+
+function normalizeQueueStatus(value: string): CurationStatus | undefined {
+  const normalized = value.toLowerCase().replace(/-/g, "_");
+  if (normalized === "blog") {
+    return "drafted";
+  }
+  if (normalized === "ready") {
+    return "publish_ready";
+  }
+  if (normalized === "review") {
+    return "reviewed";
+  }
+
+  return normalizeCurationStatus(normalized);
 }

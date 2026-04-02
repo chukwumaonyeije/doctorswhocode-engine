@@ -1,5 +1,5 @@
 export type CanonicalAction = "digest" | "file" | "summarize" | "mdx";
-export type AppAction = CanonicalAction | "retrieve" | "recent" | "search" | "pdf" | "curate" | "queue";
+export type AppAction = CanonicalAction | "retrieve" | "recent" | "search" | "pdf" | "curate" | "queue" | "queue_view";
 export type CurationStatus = "new" | "reviewed" | "drafted" | "publish_ready" | "archived";
 
 export type SourceType =
@@ -33,6 +33,7 @@ export interface ParsedCommand {
     sourceType?: SourceType;
     query?: string;
     curationStatus?: CurationStatus;
+    curationStatuses?: CurationStatus[];
   };
   curationOptions?: {
     recordId: string;

@@ -4,7 +4,7 @@ import { exportRecordPdf } from "../export/pdf";
 import { ingestInputWithOptions } from "../ingest";
 import type { IngestedSource } from "../types";
 import { buildRecord } from "../normalize/normalizeInput";
-import { ensureDatabase, fetchRecentRecords, fetchRecordById, searchRecords, updateRecordCurationStatus } from "../storage/db";
+import { ensureDatabase, fetchQueueRecords, fetchRecentRecords, fetchRecordById, searchRecords, updateRecordCurationStatus } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
 import type { ActionArtifacts, AppAction, CanonicalAction, ParsedCommand } from "../types";
 import { AppError } from "../utils/errors";
@@ -268,6 +268,35 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
     };
   }
 
+  if (parsed.action === "queue_view") {
+    const queued = await fetchQueueRecords({
+      limit: parsed.retrievalOptions?.limit,
+      sourceType: parsed.retrievalOptions?.sourceType,
+      curationStatuses: parsed.retrievalOptions?.curationStatuses
+    });
+
+    if (queued.length === 0) {
+      return {
+        reply: "No records are currently in that queue.",
+        output: "No records are currently in that queue.",
+        savedPaths: []
+      };
+    }
+
+    const lines = queued.map((item) =>
+      `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
+    );
+
+    return {
+      reply: [
+        `Editorial queue${formatQueueFilters(parsed)}:`,
+        ...lines
+      ].join("\n"),
+      output: lines.join("\n"),
+      savedPaths: []
+    };
+  }
+
   const recent = await fetchRecentRecords({
     limit: parsed.retrievalOptions?.limit,
     sourceType: parsed.retrievalOptions?.sourceType,
@@ -330,8 +359,20 @@ function formatListFilters(parsed: ParsedCommand): string {
   return filters.length > 0 ? ` (${filters.join(", ")})` : "";
 }
 
-function isRetrievalAction(action: AppAction | undefined): action is "retrieve" | "recent" | "search" {
-  return action === "retrieve" || action === "recent" || action === "search";
+function formatQueueFilters(parsed: ParsedCommand): string {
+  const filters: string[] = [];
+  if (parsed.retrievalOptions?.sourceType) {
+    filters.push(parsed.retrievalOptions.sourceType);
+  }
+  if (parsed.retrievalOptions?.curationStatuses?.length) {
+    filters.push(parsed.retrievalOptions.curationStatuses.join(", "));
+  }
+
+  return filters.length > 0 ? ` (${filters.join(" | ")})` : "";
+}
+
+function isRetrievalAction(action: AppAction | undefined): action is "retrieve" | "recent" | "search" | "queue_view" {
+  return action === "retrieve" || action === "recent" || action === "search" || action === "queue_view";
 }
 
 function buildDraftIngestedSource(ingested: IngestedSource, analysisOutput: string): IngestedSource {

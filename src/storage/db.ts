@@ -287,6 +287,63 @@ export async function fetchRecentRecords(params?: {
   return result.rows;
 }
 
+export async function fetchQueueRecords(params?: {
+  limit?: number;
+  sourceType?: string;
+  curationStatuses?: CurationStatus[];
+}): Promise<
+  Array<{
+    id: string;
+    title: string | null;
+    sourceType: string;
+    requestedAction: string;
+    createdAt: string;
+    curationStatus: CurationStatus;
+  }>
+> {
+  const limit = Math.min(Math.max(params?.limit ?? 10, 1), 20);
+  const sourceType = params?.sourceType;
+  const statuses = params?.curationStatuses?.length
+    ? params.curationStatuses
+    : (["reviewed", "drafted", "publish_ready"] as CurationStatus[]);
+
+  const result = (await getPool().query(
+    `
+      select
+        id,
+        title,
+        source_type as "sourceType",
+        requested_action as "requestedAction",
+        created_at as "createdAt",
+        curation_status as "curationStatus"
+      from research_records
+      where ($1::text is null or source_type = $1)
+        and curation_status = any($2::text[])
+      order by
+        case curation_status
+          when 'publish_ready' then 1
+          when 'drafted' then 2
+          when 'reviewed' then 3
+          else 4
+        end,
+        created_at desc
+      limit $3
+    `,
+    [sourceType ?? null, statuses, limit]
+  )) as {
+    rows: Array<{
+      id: string;
+      title: string | null;
+      sourceType: string;
+      requestedAction: string;
+      createdAt: string;
+      curationStatus: CurationStatus;
+    }>;
+  };
+
+  return result.rows;
+}
+
 export async function searchRecords(params: {
   query: string;
   limit?: number;
