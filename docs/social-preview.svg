@@ -1,0 +1,44 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111F"/>
+      <stop offset="0.55" stop-color="#0D1B2A"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="194" y1="114" x2="1032" y2="548" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#38BDF8" stop-opacity="0.02"/>
+    </linearGradient>
+    <filter id="blur" x="92" y="58" width="1096" height="524" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="36"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <g filter="url(#blur)">
+    <rect x="200" y="130" width="880" height="380" rx="32" fill="url(#glow)"/>
+  </g>
+
+  <rect x="120" y="92" width="1040" height="456" rx="28" fill="#0B1220" fill-opacity="0.82" stroke="#1E293B" stroke-width="2"/>
+  <circle cx="196" cy="170" r="8" fill="#22D3EE"/>
+  <circle cx="226" cy="170" r="8" fill="#38BDF8" fill-opacity="0.7"/>
+  <circle cx="256" cy="170" r="8" fill="#67E8F9" fill-opacity="0.45"/>
+
+  <text x="168" y="254" fill="#F8FAFC" font-size="62" font-weight="700" font-family="Space Grotesk, Segoe UI, Arial, sans-serif">DoctorsWhoCode Engine</text>
+  <text x="168" y="314" fill="#94A3B8" font-size="28" font-weight="500" font-family="Segoe UI, Arial, sans-serif">Telegram-driven research ingestion, analysis, MDX drafting,</text>
+  <text x="168" y="352" fill="#94A3B8" font-size="28" font-weight="500" font-family="Segoe UI, Arial, sans-serif">PDF export, and editorial workflow infrastructure for physician-builders.</text>
+
+  <rect x="168" y="408" width="238" height="44" rx="22" fill="#0F172A" stroke="#22D3EE" stroke-opacity="0.45"/>
+  <text x="194" y="437" fill="#67E8F9" font-size="21" font-weight="600" font-family="Segoe UI, Arial, sans-serif">Postgres as memory</text>
+
+  <rect x="426" y="408" width="206" height="44" rx="22" fill="#0F172A" stroke="#38BDF8" stroke-opacity="0.45"/>
+  <text x="451" y="437" fill="#BAE6FD" font-size="21" font-weight="600" font-family="Segoe UI, Arial, sans-serif">MDX + PDF outputs</text>
+
+  <rect x="652" y="408" width="228" height="44" rx="22" fill="#0F172A" stroke="#22D3EE" stroke-opacity="0.45"/>
+  <text x="680" y="437" fill="#A5F3FC" font-size="21" font-weight="600" font-family="Segoe UI, Arial, sans-serif">Search + curation queue</text>
+
+  <rect x="900" y="408" width="184" height="44" rx="22" fill="#0F172A" stroke="#38BDF8" stroke-opacity="0.45"/>
+  <text x="931" y="437" fill="#E0F2FE" font-size="21" font-weight="600" font-family="Segoe UI, Arial, sans-serif">GitHub sync</text>
+
+  <text x="168" y="508" fill="#475569" font-size="20" font-family="Segoe UI, Arial, sans-serif">Build better clinical knowledge systems.</text>
+</svg>
