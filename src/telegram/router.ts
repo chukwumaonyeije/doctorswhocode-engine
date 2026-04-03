@@ -313,7 +313,7 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
 
     const lines = matches.flatMap((item) => {
       const summaryLine = `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`;
-      const preview = formatSearchPreview(item.matchPreview);
+      const preview = formatSearchPreview(item.matchPreview, item.sourceType);
       return preview ? [summaryLine, `  Match: ${preview}`] : [summaryLine];
     });
 
@@ -492,7 +492,7 @@ function extractMdxSummary(reply: string): string {
   return kept.join("\n");
 }
 
-function formatSearchPreview(value: string | null | undefined): string | null {
+function formatSearchPreview(value: string | null | undefined, sourceType?: string): string | null {
   if (!value) {
     return null;
   }
@@ -502,7 +502,7 @@ function formatSearchPreview(value: string | null | undefined): string | null {
     return null;
   }
 
-  if (looksLikeNoisyPdfSnippet(compact)) {
+  if (sourceType === "pdf_document" && !looksLikeReadablePdfPreview(compact)) {
     return null;
   }
 
@@ -520,14 +520,36 @@ function sanitizeSearchPreview(value: string): string {
     .trim();
 }
 
-function looksLikeNoisyPdfSnippet(value: string): boolean {
+function looksLikeReadablePdfPreview(value: string): boolean {
+  if (looksLikeSourceReferencePreview(value)) {
+    return true;
+  }
+
   const words = value.split(/\s+/).filter(Boolean);
   if (words.length < 6) {
-    return false;
+    return true;
   }
 
   const noisyWordCount = words.filter((word) => /[^A-Za-z0-9,.;:()'"%/-]/.test(word)).length;
   const punctuationRuns = (value.match(/[^\w\s]{3,}/g) ?? []).length;
+  const spacedLetterRuns = (value.match(/\b(?:[A-Za-z]\s){3,}[A-Za-z]\b/g) ?? []).length;
+  const shortWordCount = words.filter((word) => word.length <= 2).length;
 
-  return noisyWordCount >= Math.ceil(words.length * 0.3) || punctuationRuns > 0;
+  if (noisyWordCount >= Math.ceil(words.length * 0.2)) {
+    return false;
+  }
+
+  if (punctuationRuns > 0 || spacedLetterRuns > 0) {
+    return false;
+  }
+
+  if (shortWordCount >= Math.ceil(words.length * 0.45)) {
+    return false;
+  }
+
+  return true;
+}
+
+function looksLikeSourceReferencePreview(value: string): boolean {
+  return /^(upload:|https?:\/\/|PMID:|[A-Za-z]:\\|\\\\)/i.test(value);
 }
