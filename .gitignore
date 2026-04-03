@@ -5,3 +5,5 @@ archive/records/*.json
 archive/sources/*.md
 archive/summaries/*.md
 archive/transcripts/*.md
+.git-commit-message.txt
+DWC_engine_bot API and URLs.txt

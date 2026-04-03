@@ -29,7 +29,10 @@ export function buildCompactProvenanceBlock(record: NormalizedRecord): string | 
     ...(lineCount !== null && lineCount > 0 ? [`- Transcript lines: ${lineCount}`] : []),
     ...(speakerCount !== null && speakerCount > 0 ? [`- Named speakers detected: ${speakerCount}`] : []),
     ...(attempts ? [`- Providers tried: ${attempts}`] : []),
-    ...(summary ? [`- Note: ${summary}`] : [])
+    ...(summary ? [`- Note: ${summary}`] : []),
+    ...(transcriptStatus === "metadata_only"
+      ? ["- Best next step: paste the transcript directly or retry with deep YouTube analysis if hosted fallbacks are enabled."]
+      : [])
   ];
 
   return lines.join("\n");

@@ -7,7 +7,7 @@ import { ingestText } from "./text";
 import { ingestTranscript } from "./transcript";
 import { ingestYouTube } from "./youtube";
 import { ingestUrl } from "./url";
-import { logSourceCounter } from "../utils/logging";
+import { logSourceCounter, logStage } from "../utils/logging";
 
 export async function ingestInput(input: string): Promise<IngestedSource> {
   return ingestInputWithOptions(input);
@@ -21,8 +21,23 @@ export async function ingestInputWithOptions(
   }
 ): Promise<IngestedSource> {
   const classification = classifyInput(input);
+  logStage({
+    requestId: options?.requestId,
+    stage: "ingest_classification",
+    status: "completed",
+    source: classification,
+    detail: `Input classified as ${classification}`
+  });
+
   try {
     let ingested: IngestedSource;
+
+    logStage({
+      requestId: options?.requestId,
+      stage: "ingest_source_resolution",
+      status: "started",
+      source: classification
+    });
 
     switch (classification) {
       case "pubmed":
@@ -64,14 +79,35 @@ export async function ingestInputWithOptions(
       completeness: ingested.completeness
     });
 
+    logStage({
+      requestId: options?.requestId,
+      stage: "ingest_source_resolution",
+      status: "completed",
+      source: classification,
+      detail: `Resolved as ${ingested.sourceType}`,
+      meta: {
+        resolvedSourceType: ingested.sourceType,
+        completeness: ingested.completeness,
+        title: ingested.title
+      }
+    });
+
     return ingested;
   } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
     logSourceCounter({
       source: classification,
       outcome: "failure",
       requestId: options?.requestId,
       classifiedSource: classification,
-      detail: error instanceof Error ? error.message : String(error)
+      detail
+    });
+    logStage({
+      requestId: options?.requestId,
+      stage: "ingest_source_resolution",
+      status: "failed",
+      source: classification,
+      detail
     });
     throw error;
   }

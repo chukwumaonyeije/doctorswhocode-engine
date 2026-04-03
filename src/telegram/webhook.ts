@@ -6,7 +6,7 @@ import { ingestPdfBase64 } from "../ingest/pdf";
 import { chunkTelegramMessage, condenseTelegramReply } from "../render/telegram";
 import type { CanonicalAction, TelegramMessage, TelegramUpdate } from "../types";
 import { formatTelegramError } from "../utils/errors";
-import { createRequestId, logError, logInfo } from "../utils/logging";
+import { createRequestId, logError, logInfo, logStage } from "../utils/logging";
 import { handleIngestedSourceAction, handleParsedCommand } from "./router";
 import { buildDeepYouTubeAcknowledgement, parseCommand } from "./parseCommand";
 
@@ -89,13 +89,58 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<void
       analysisMode: parsed.analysisMode
     });
 
-    for (const chunk of chunkTelegramMessage(telegramReply)) {
+    const replyChunks = chunkTelegramMessage(telegramReply);
+    logInfo("telegram_reply_prepared", {
+      requestId,
+      action: parsed.action,
+      chunkCount: replyChunks.length,
+      replyLength: telegramReply.length,
+      recordId: result.recordId
+    });
+
+    for (const [index, chunk] of replyChunks.entries()) {
+      logStage({
+        requestId,
+        stage: "telegram_send_message",
+        status: "started",
+        action: parsed.action,
+        detail: `Sending chunk ${index + 1} of ${replyChunks.length}`,
+        meta: {
+          chunkIndex: index + 1,
+          chunkLength: chunk.length
+        }
+      });
       await sendTelegramMessage(chatId, chunk);
+      logStage({
+        requestId,
+        stage: "telegram_send_message",
+        status: "completed",
+        action: parsed.action,
+        detail: `Sent chunk ${index + 1} of ${replyChunks.length}`,
+        meta: {
+          chunkIndex: index + 1,
+          chunkLength: chunk.length
+        }
+      });
     }
 
     const pdfPath = result.savedPaths.find((savedPath) => savedPath.toLowerCase().endsWith(".pdf"));
     if (pdfPath) {
+      logStage({
+        requestId,
+        stage: "telegram_send_document",
+        status: "started",
+        action: parsed.action,
+        detail: pdfPath
+      });
       await sendTelegramDocument(chatId, pdfPath, `PDF export for record ${result.recordId ?? path.basename(pdfPath, ".pdf")}`);
+      logStage({
+        requestId,
+        stage: "telegram_send_document",
+        status: "completed",
+        action: parsed.action,
+        detail: pdfPath
+      });
     }
 
     logInfo("telegram_request_completed", {
@@ -170,13 +215,58 @@ async function handleTelegramDocumentMessage(params: {
     analysisMode: "default"
   });
 
-  for (const chunk of chunkTelegramMessage(telegramReply)) {
+  const replyChunks = chunkTelegramMessage(telegramReply);
+  logInfo("telegram_reply_prepared", {
+    requestId,
+    action: inferred.action,
+    chunkCount: replyChunks.length,
+    replyLength: telegramReply.length,
+    recordId: result.recordId
+  });
+
+  for (const [index, chunk] of replyChunks.entries()) {
+    logStage({
+      requestId,
+      stage: "telegram_send_message",
+      status: "started",
+      action: inferred.action,
+      detail: `Sending chunk ${index + 1} of ${replyChunks.length}`,
+      meta: {
+        chunkIndex: index + 1,
+        chunkLength: chunk.length
+      }
+    });
     await sendTelegramMessage(chatId, chunk);
+    logStage({
+      requestId,
+      stage: "telegram_send_message",
+      status: "completed",
+      action: inferred.action,
+      detail: `Sent chunk ${index + 1} of ${replyChunks.length}`,
+      meta: {
+        chunkIndex: index + 1,
+        chunkLength: chunk.length
+      }
+    });
   }
 
   const pdfPath = result.savedPaths.find((savedPath) => savedPath.toLowerCase().endsWith(".pdf"));
   if (pdfPath) {
+    logStage({
+      requestId,
+      stage: "telegram_send_document",
+      status: "started",
+      action: inferred.action,
+      detail: pdfPath
+    });
     await sendTelegramDocument(chatId, pdfPath, `PDF export for record ${result.recordId ?? path.basename(pdfPath, ".pdf")}`);
+    logStage({
+      requestId,
+      stage: "telegram_send_document",
+      status: "completed",
+      action: inferred.action,
+      detail: pdfPath
+    });
   }
 
   logInfo("telegram_document_completed", {

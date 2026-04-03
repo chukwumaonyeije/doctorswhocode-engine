@@ -12,6 +12,27 @@ export function createRequestId(prefix = "req"): string {
   return `${prefix}_${timestamp}_${random}`;
 }
 
+export function logStage(params: {
+  requestId?: string;
+  stage: string;
+  status: "started" | "completed" | "failed";
+  action?: string;
+  source?: string;
+  detail?: string;
+  meta?: Record<string, unknown>;
+}): void {
+  const { requestId, stage, status, action, source, detail, meta } = params;
+  logInfo("workflow_stage", {
+    requestId,
+    stage,
+    status,
+    action,
+    source,
+    detail,
+    ...meta
+  });
+}
+
 export function logSourceCounter(params: {
   source: string;
   outcome: "success" | "failure";

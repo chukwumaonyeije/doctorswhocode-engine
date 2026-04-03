@@ -1,7 +1,7 @@
 import axios from "axios";
 import { config } from "../config";
 import { AppError } from "../utils/errors";
-import { logInfo, logSourceCounter } from "../utils/logging";
+import { logInfo, logSourceCounter, logStage } from "../utils/logging";
 import type { IngestedSource } from "../types";
 
 type YoutubeTranscriptLine = {
@@ -40,8 +40,17 @@ export async function ingestYouTube(
   }
 
   const metadata = await fetchYouTubeMetadata(url);
+  logInfo("youtube_metadata_resolved", {
+    requestId: options?.requestId,
+    videoId,
+    title: metadata.title,
+    authorName: metadata.author_name,
+    hasThumbnail: Boolean(metadata.thumbnail_url)
+  });
   const transcriptResult = await fetchYouTubeTranscript(url, {
-    allowHostedProviders: options?.allowHostedProviders ?? false
+    allowHostedProviders: options?.allowHostedProviders ?? false,
+    requestId: options?.requestId,
+    videoId
   });
   const transcriptLines = transcriptResult.lines ?? [];
   const transcriptStatus = buildTranscriptStatus({
@@ -57,6 +66,21 @@ export async function ingestYouTube(
     resolvedSourceType: transcriptLines.length > 0 ? "transcript" : "webpage",
     completeness: transcriptLines.length > 0 ? "transcript_only" : "partial",
     detail: transcriptLines.length > 0 ? transcriptStatus : summarizeTranscriptError(transcriptResult.error) ?? "metadata_only"
+  });
+
+  logStage({
+    requestId: options?.requestId,
+    stage: "youtube_transcript_resolution",
+    status: transcriptLines.length > 0 ? "completed" : "failed",
+    source: "youtube",
+    detail: transcriptLines.length > 0 ? transcriptStatus : summarizeTranscriptError(transcriptResult.error) ?? "metadata_only",
+    meta: {
+      videoId,
+      transcriptStatus,
+      transcriptSource: transcriptResult.source,
+      transcriptAttemptCount: transcriptResult.attempts.length,
+      transcriptAttempts: transcriptResult.attempts
+    }
   });
 
   const normalizedText =
@@ -157,11 +181,24 @@ async function fetchYouTubeTranscript(
   url: string,
   options?: {
     allowHostedProviders?: boolean;
+    requestId?: string;
+    videoId?: string;
   }
 ): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string; attempts: TranscriptAttempt[] }> {
   const attempts: TranscriptAttempt[] = [];
 
-  const primary = await fetchTranscriptWithPrimaryStrategy(url);
+  logStage({
+    requestId: options?.requestId,
+    stage: "youtube_transcript_resolution",
+    status: "started",
+    source: "youtube",
+    detail: options?.allowHostedProviders ? "Hosted fallbacks enabled" : "Hosted fallbacks disabled",
+    meta: {
+      videoId: options?.videoId
+    }
+  });
+
+  const primary = await fetchTranscriptWithPrimaryStrategy(url, options);
   if (primary.lines?.length) {
     return {
       ...primary,
@@ -174,7 +211,7 @@ async function fetchYouTubeTranscript(
 
   const videoId = extractYouTubeVideoId(url);
   if (videoId) {
-    const fallback = await fetchTranscriptWithFallbackStrategy(videoId);
+    const fallback = await fetchTranscriptWithFallbackStrategy(videoId, options);
     if (fallback.lines?.length) {
       return {
         ...fallback,
@@ -187,7 +224,7 @@ async function fetchYouTubeTranscript(
   }
 
   if (options?.allowHostedProviders) {
-    const supadata = await fetchTranscriptWithSupadata(url);
+    const supadata = await fetchTranscriptWithSupadata(url, options);
     if (supadata.lines?.length) {
       return {
         ...supadata,
@@ -199,7 +236,7 @@ async function fetchYouTubeTranscript(
     }
 
     if (videoId) {
-      const fetchTranscript = await fetchTranscriptWithFetchTranscript(videoId);
+      const fetchTranscript = await fetchTranscriptWithFetchTranscript(videoId, options);
       if (fetchTranscript.lines?.length) {
         return {
           ...fetchTranscript,
@@ -243,10 +280,16 @@ async function loadYoutubeTranscript(): Promise<YoutubeTranscriptApi> {
 }
 
 async function fetchTranscriptWithPrimaryStrategy(
-  url: string
+  url: string,
+  options?: {
+    requestId?: string;
+    videoId?: string;
+  }
 ): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
   try {
     logInfo("youtube_transcript_attempt", {
+      requestId: options?.requestId,
+      videoId: options?.videoId,
       strategy: "youtube-transcript"
     });
 
@@ -259,6 +302,8 @@ async function fetchTranscriptWithPrimaryStrategy(
     ]);
 
     logInfo("youtube_transcript_success", {
+      requestId: options?.requestId,
+      videoId: options?.videoId,
       strategy: "youtube-transcript",
       lineCount: lines.length
     });
@@ -268,17 +313,29 @@ async function fetchTranscriptWithPrimaryStrategy(
       source: "youtube-transcript"
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Primary transcript strategy failed";
+    logInfo("youtube_transcript_failure", {
+      requestId: options?.requestId,
+      videoId: options?.videoId,
+      strategy: "youtube-transcript",
+      error: message
+    });
     return {
-      error: error instanceof Error ? error.message : "Primary transcript strategy failed"
+      error: message
     };
   }
 }
 
 async function fetchTranscriptWithFallbackStrategy(
-  videoId: string
+  videoId: string,
+  options?: {
+    requestId?: string;
+  }
 ): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
   try {
     logInfo("youtube_transcript_attempt", {
+      requestId: options?.requestId,
+      videoId,
       strategy: "youtube-transcript-api"
     });
 
@@ -297,6 +354,8 @@ async function fetchTranscriptWithFallbackStrategy(
     }));
 
     logInfo("youtube_transcript_success", {
+      requestId: options?.requestId,
+      videoId,
       strategy: "youtube-transcript-api",
       lineCount: lines.length
     });
@@ -306,14 +365,25 @@ async function fetchTranscriptWithFallbackStrategy(
       source: "youtube-transcript-api"
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Fallback transcript strategy failed";
+    logInfo("youtube_transcript_failure", {
+      requestId: options?.requestId,
+      videoId,
+      strategy: "youtube-transcript-api",
+      error: message
+    });
     return {
-      error: error instanceof Error ? error.message : "Fallback transcript strategy failed"
+      error: message
     };
   }
 }
 
 async function fetchTranscriptWithSupadata(
-  url: string
+  url: string,
+  options?: {
+    requestId?: string;
+    videoId?: string;
+  }
 ): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
   if (!config.supadataApiKey) {
     return { error: "Supadata API key not configured" };
@@ -321,6 +391,8 @@ async function fetchTranscriptWithSupadata(
 
   try {
     logInfo("youtube_transcript_attempt", {
+      requestId: options?.requestId,
+      videoId: options?.videoId,
       strategy: "supadata"
     });
 
@@ -341,6 +413,8 @@ async function fetchTranscriptWithSupadata(
       const lines = mapSupadataContentToLines(initialResponse.data?.content);
       if (lines.length > 0) {
         logInfo("youtube_transcript_success", {
+          requestId: options?.requestId,
+          videoId: options?.videoId,
           strategy: "supadata",
           lineCount: lines.length
         });
@@ -363,8 +437,15 @@ async function fetchTranscriptWithSupadata(
       error: `Supadata returned HTTP ${initialResponse.status}`
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Supadata transcript strategy failed";
+    logInfo("youtube_transcript_failure", {
+      requestId: options?.requestId,
+      videoId: options?.videoId,
+      strategy: "supadata",
+      error: message
+    });
     return {
-      error: error instanceof Error ? error.message : "Supadata transcript strategy failed"
+      error: message
     };
   }
 }
@@ -423,7 +504,10 @@ async function pollSupadataJob(
 }
 
 async function fetchTranscriptWithFetchTranscript(
-  videoId: string
+  videoId: string,
+  options?: {
+    requestId?: string;
+  }
 ): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
   if (!config.fetchTranscriptApiKey) {
     return { error: "FetchTranscript API key not configured" };
@@ -431,6 +515,8 @@ async function fetchTranscriptWithFetchTranscript(
 
   try {
     logInfo("youtube_transcript_attempt", {
+      requestId: options?.requestId,
+      videoId,
       strategy: "fetchtranscript"
     });
 
@@ -472,6 +558,8 @@ async function fetchTranscriptWithFetchTranscript(
     }
 
     logInfo("youtube_transcript_success", {
+      requestId: options?.requestId,
+      videoId,
       strategy: "fetchtranscript",
       lineCount: lines.length
     });
@@ -481,8 +569,15 @@ async function fetchTranscriptWithFetchTranscript(
       source: "fetchtranscript"
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : "FetchTranscript strategy failed";
+    logInfo("youtube_transcript_failure", {
+      requestId: options?.requestId,
+      videoId,
+      strategy: "fetchtranscript",
+      error: message
+    });
     return {
-      error: error instanceof Error ? error.message : "FetchTranscript strategy failed"
+      error: message
     };
   }
 }
@@ -520,7 +615,7 @@ function buildMetadataOnlyText(params: {
   transcriptError?: string;
 }): string {
   const guidance =
-    "Transcript text was not available from the current retrieval path. You can still get a metadata-based read now, or paste the transcript directly for a stronger analysis.";
+    "Transcript text was not available from the current retrieval path, so this run falls back to metadata only. You can still get a directional read now, but the strongest next step is to paste the transcript directly.";
   const transcriptDetail = summarizeTranscriptError(params.transcriptError);
 
   return [
@@ -531,7 +626,7 @@ function buildMetadataOnlyText(params: {
     `Video ID: ${params.videoId}`,
     ...(transcriptDetail ? [`Transcript status: ${transcriptDetail}`] : []),
     guidance,
-    "Best fallback: paste the transcript text directly if you want a fuller source-aware review."
+    "Best fallback: paste the transcript text directly, or retry with a deep YouTube request if hosted transcript fallbacks are enabled."
   ].join("\n");
 }
 
@@ -568,6 +663,14 @@ function summarizeTranscriptError(error?: string): string | null {
     return null;
   }
 
+  if (/caption/i.test(error) || /subtitles/i.test(error)) {
+    return "No accessible transcript track was exposed by the video.";
+  }
+
+  if (/private/i.test(error) || /unavailable/i.test(error) && /video/i.test(error)) {
+    return "The video was not accessible to the transcript providers.";
+  }
+
   if (/timed out/i.test(error)) {
     return "Transcript retrieval timed out.";
   }
@@ -586,6 +689,10 @@ function summarizeTranscriptError(error?: string): string | null {
 
   if (/Transcript unavailable/i.test(error)) {
     return "No transcript was available from the current providers.";
+  }
+
+  if (/could not be loaded/i.test(error)) {
+    return "Transcript retrieval module could not be loaded.";
   }
 
   return "Transcript could not be retrieved from the current providers.";
