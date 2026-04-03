@@ -390,7 +390,12 @@ export async function fetchRecentRecords(params?: {
               or coalesce(outputs->>'output', '') ilike '%' || topic || '%'
               or exists (
                 select 1
-                from jsonb_array_elements_text(tags) as tag
+                from jsonb_array_elements_text(
+                  case
+                    when jsonb_typeof(tags) = 'array' then tags
+                    else '[]'::jsonb
+                  end
+                ) as tag
                 where lower(tag) like '%' || topic || '%'
               )
           )
@@ -468,7 +473,12 @@ export async function fetchQueueRecords(params?: {
               or coalesce(outputs->>'output', '') ilike '%' || topic || '%'
               or exists (
                 select 1
-                from jsonb_array_elements_text(tags) as tag
+                from jsonb_array_elements_text(
+                  case
+                    when jsonb_typeof(tags) = 'array' then tags
+                    else '[]'::jsonb
+                  end
+                ) as tag
                 where lower(tag) like '%' || topic || '%'
               )
           )
@@ -555,7 +565,12 @@ export async function searchRecords(params: {
           when source_reference ilike $8 then source_reference
           when exists (
             select 1
-            from jsonb_array_elements_text(tags) as tag
+            from jsonb_array_elements_text(
+              case
+                when jsonb_typeof(tags) = 'array' then tags
+                else '[]'::jsonb
+              end
+            ) as tag
             where lower(tag) = any($9::text[])
                or lower(tag) like any($10::text[])
           )
@@ -563,7 +578,12 @@ export async function searchRecords(params: {
             select 'Tags: ' || string_agg(tag, ', ' order by tag)
             from (
               select distinct tag
-              from jsonb_array_elements_text(tags) as tag
+              from jsonb_array_elements_text(
+                case
+                  when jsonb_typeof(tags) = 'array' then tags
+                  else '[]'::jsonb
+                end
+              ) as tag
               where lower(tag) = any($9::text[])
                  or lower(tag) like any($10::text[])
               limit 3
@@ -583,7 +603,12 @@ export async function searchRecords(params: {
           case
             when exists (
               select 1
-              from jsonb_array_elements_text(tags) as tag
+              from jsonb_array_elements_text(
+                case
+                  when jsonb_typeof(tags) = 'array' then tags
+                  else '[]'::jsonb
+                end
+              ) as tag
               where lower(tag) = any($9::text[])
             )
             then 25
@@ -592,7 +617,12 @@ export async function searchRecords(params: {
           case
             when exists (
               select 1
-              from jsonb_array_elements_text(tags) as tag
+              from jsonb_array_elements_text(
+                case
+                  when jsonb_typeof(tags) = 'array' then tags
+                  else '[]'::jsonb
+                end
+              ) as tag
               where lower(tag) like any($10::text[])
             )
             then 10
@@ -619,13 +649,23 @@ export async function searchRecords(params: {
                   when lower(source_reference) like '%' || term || '%' then 8
                   when exists (
                     select 1
-                    from jsonb_array_elements_text(tags) as tag
+                    from jsonb_array_elements_text(
+                      case
+                        when jsonb_typeof(tags) = 'array' then tags
+                        else '[]'::jsonb
+                      end
+                    ) as tag
                     where lower(tag) = term
                   )
                   then 12
                   when exists (
                     select 1
-                    from jsonb_array_elements_text(tags) as tag
+                    from jsonb_array_elements_text(
+                      case
+                        when jsonb_typeof(tags) = 'array' then tags
+                        else '[]'::jsonb
+                      end
+                    ) as tag
                     where lower(tag) like '%' || term || '%'
                   )
                   then 6
@@ -660,7 +700,12 @@ export async function searchRecords(params: {
               or coalesce(outputs->>'output', '') ilike '%' || topic || '%'
               or exists (
                 select 1
-                from jsonb_array_elements_text(tags) as tag
+                from jsonb_array_elements_text(
+                  case
+                    when jsonb_typeof(tags) = 'array' then tags
+                    else '[]'::jsonb
+                  end
+                ) as tag
                 where lower(tag) like '%' || topic || '%'
               )
           )
@@ -674,7 +719,12 @@ export async function searchRecords(params: {
           or lower(source_type) like $7
           or exists (
             select 1
-            from jsonb_array_elements_text(tags) as tag
+            from jsonb_array_elements_text(
+              case
+                when jsonb_typeof(tags) = 'array' then tags
+                else '[]'::jsonb
+              end
+            ) as tag
             where lower(tag) = any($9::text[])
                or lower(tag) like any($10::text[])
           )
