@@ -346,9 +346,7 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
       };
     }
 
-    const lines = queued.map((item) =>
-      `- ${item.id} | ${item.curationStatus} | ${item.ageDays}d | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
-    );
+    const lines = queued.map((item) => formatQueueResultLine(item));
 
     return {
       reply: [
@@ -378,7 +376,7 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
   }
 
   const lines = recent.map((item) =>
-    `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
+    formatSearchResultLine(item)
   );
 
   return {
@@ -526,6 +524,23 @@ function formatSearchResultLine(item: {
   return [
     `- ${title}`,
     `  ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction}${createdLabel ? ` | ${createdLabel}` : ""}`
+  ].join("\n");
+}
+
+function formatQueueResultLine(item: {
+  id: string;
+  title: string | null;
+  sourceType: string;
+  requestedAction: string;
+  createdAt: string;
+  curationStatus: CurationStatus;
+  ageDays: number;
+}): string {
+  const title = item.title?.trim() || "Untitled";
+  const createdLabel = formatSearchResultDate(item.createdAt);
+  return [
+    `- ${title}`,
+    `  ${item.id} | ${item.curationStatus} | ${item.ageDays}d | ${item.sourceType} | ${item.requestedAction}${createdLabel ? ` | ${createdLabel}` : ""}`
   ].join("\n");
 }
 
