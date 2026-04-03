@@ -534,12 +534,15 @@ function looksLikeReadablePdfPreview(value: string): boolean {
   const punctuationRuns = (value.match(/[^\w\s]{3,}/g) ?? []).length;
   const spacedLetterRuns = (value.match(/\b(?:[A-Za-z]\s){3,}[A-Za-z]\b/g) ?? []).length;
   const shortWordCount = words.filter((word) => word.length <= 2).length;
+  const splitWordArtifacts =
+    (value.match(/\b[A-Za-z]\s+[A-Za-z]{2,}\b/g) ?? []).length +
+    (value.match(/\b[A-Za-z]{2,}\s+[A-Za-z]\b/g) ?? []).length;
 
   if (noisyWordCount >= Math.ceil(words.length * 0.2)) {
     return false;
   }
 
-  if (punctuationRuns > 0 || spacedLetterRuns > 0) {
+  if (punctuationRuns > 0 || spacedLetterRuns > 0 || splitWordArtifacts >= 2) {
     return false;
   }
 
