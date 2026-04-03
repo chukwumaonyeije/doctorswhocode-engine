@@ -344,8 +344,9 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     const topics: string[] = [];
     const queryParts: string[] = [];
 
-    for (const part of parts) {
-      if (!limit && /^\d+$/.test(part)) {
+    for (let index = 0; index < parts.length; index += 1) {
+      const part = parts[index];
+      if (!limit && isTrailingLimitToken(parts, index)) {
         limit = Number(part);
         continue;
       }
@@ -424,8 +425,9 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     let createdBefore: string | undefined;
     const topics: string[] = [];
 
-    for (const part of parts) {
-      if (!limit && /^\d+$/.test(part)) {
+    for (let index = 0; index < parts.length; index += 1) {
+      const part = parts[index];
+      if (!limit && isTrailingLimitToken(parts, index)) {
         limit = Number(part);
         continue;
       }
@@ -549,8 +551,9 @@ function parseQueueViewCommand(text: string): ParsedCommand | null {
   const topics: string[] = [];
   const statuses: CurationStatus[] = [];
 
-  for (const part of parts) {
-    if (!limit && /^\d+$/.test(part)) {
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
+    if (!limit && isTrailingLimitToken(parts, index)) {
       limit = Number(part);
       continue;
     }
@@ -718,4 +721,17 @@ function parseTopicFilter(part: string): string | null {
 
   const value = matched[1].trim();
   return value.length > 0 ? value.toLowerCase() : null;
+}
+
+function isTrailingLimitToken(parts: string[], index: number): boolean {
+  const part = parts[index];
+  if (!/^\d+$/.test(part)) {
+    return false;
+  }
+
+  if (index !== parts.length - 1) {
+    return false;
+  }
+
+  return index > 0;
 }
