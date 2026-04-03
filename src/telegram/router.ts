@@ -14,7 +14,7 @@ import {
   updateRecordCurationStatus
 } from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
-import type { ActionArtifacts, AppAction, CanonicalAction, ParsedCommand } from "../types";
+import type { ActionArtifacts, AppAction, CanonicalAction, CurationStatus, ParsedCommand } from "../types";
 import { AppError } from "../utils/errors";
 import { createRequestId, logInfo } from "../utils/logging";
 import { parseCommand } from "./parseCommand";
@@ -312,7 +312,7 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
     }
 
     const lines = matches.flatMap((item) => {
-      const summaryLine = `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`;
+      const summaryLine = formatSearchResultLine(item);
       const preview = formatSearchPreview(item.matchPreview, item.sourceType);
       return preview ? [summaryLine, `  Match: ${preview}`] : [summaryLine];
     });
@@ -511,6 +511,34 @@ function formatSearchPreview(value: string | null | undefined, sourceType?: stri
   }
 
   return `${compact.slice(0, 177).trim()}...`;
+}
+
+function formatSearchResultLine(item: {
+  id: string;
+  title: string | null;
+  sourceType: string;
+  requestedAction: string;
+  createdAt: string;
+  curationStatus: CurationStatus;
+}): string {
+  const title = item.title?.trim() || "Untitled";
+  const createdLabel = formatSearchResultDate(item.createdAt);
+  return [
+    `- ${title}`,
+    `  ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction}${createdLabel ? ` | ${createdLabel}` : ""}`
+  ].join("\n");
+}
+
+function formatSearchResultDate(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function sanitizeSearchPreview(value: string): string {
