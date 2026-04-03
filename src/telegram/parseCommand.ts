@@ -346,7 +346,7 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
 
     for (let index = 0; index < parts.length; index += 1) {
       const part = parts[index];
-      if (!limit && isTrailingLimitToken(parts, index)) {
+      if (!limit && isSearchLimitToken(parts, index)) {
         limit = Number(part);
         continue;
       }
@@ -734,4 +734,13 @@ function isTrailingLimitToken(parts: string[], index: number): boolean {
   }
 
   return index > 0;
+}
+
+function isSearchLimitToken(parts: string[], index: number): boolean {
+  if (!isTrailingLimitToken(parts, index)) {
+    return false;
+  }
+
+  const value = Number(parts[index]);
+  return Number.isInteger(value) && value >= 1 && value <= 20;
 }
