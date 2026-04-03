@@ -1,5 +1,6 @@
 import modes from "../../configs/modes.json";
-import type { AppAction, CanonicalAction, CurationStatus, ParsedCommand, SourceType } from "../types";
+import { normalizeSourceReference } from "../storage/sourceReferences";
+import type { AppAction, CanonicalAction, CurationStatus, ParsedCommand, QueueSort, SourceType } from "../types";
 
 const aliasMap = new Map<string, CanonicalAction>();
 const orderedAliases: string[] = [];
@@ -241,6 +242,13 @@ export function buildDeepYouTubeAcknowledgement(parsed: ParsedCommand): string |
 }
 
 function parseRetrievalCommand(text: string): ParsedCommand | null {
+  if (/^(?:pdf|export\s+pdf)$/i.test(text.trim())) {
+    return {
+      valid: false,
+      error: "Missing record ID. Example: pdf 00bbfa8e03e87849."
+    };
+  }
+
   const showMatch = text.match(/^(?:show|retrieve)\s+([a-f0-9]{8,32})$/i);
   if (showMatch) {
     return {
@@ -251,6 +259,21 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
       rawRequest: text,
       analysisMode: "default"
     };
+  }
+
+  const showSourceMatch = text.match(/^(?:show|retrieve)\s+(.+)$/i);
+  if (showSourceMatch) {
+    const sourceReference = normalizeRetrievalSourceReference(showSourceMatch[1]);
+    if (sourceReference) {
+      return {
+        valid: true,
+        action: "retrieve",
+        input: sourceReference,
+        intentLabel: "source_retrieval",
+        rawRequest: text,
+        analysisMode: "default"
+      };
+    }
   }
 
   const mdxFromRecordMatch = text.match(/^(?:mdx|blog)\s+([a-f0-9]{8,32})$/i);
@@ -316,11 +339,37 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     let limit: number | undefined;
     let sourceType: SourceType | undefined;
     let curationStatus: CurationStatus | undefined;
+    let createdAfter: string | undefined;
+    let createdBefore: string | undefined;
+    const topics: string[] = [];
     const queryParts: string[] = [];
 
     for (const part of parts) {
       if (!limit && /^\d+$/.test(part)) {
         limit = Number(part);
+        continue;
+      }
+
+      const dateFilter = parseDateFilter(part);
+      if (dateFilter) {
+        if ("type" in dateFilter) {
+          return {
+            valid: false,
+            error: dateFilter.error
+          };
+        }
+
+        if (dateFilter.kind === "after") {
+          createdAfter = dateFilter.value;
+        } else {
+          createdBefore = dateFilter.value;
+        }
+        continue;
+      }
+
+      const topicFilter = parseTopicFilter(part);
+      if (topicFilter) {
+        topics.push(topicFilter);
         continue;
       }
 
@@ -357,6 +406,9 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
       retrievalOptions: {
         limit,
         sourceType,
+        topics: topics.length > 0 ? [...new Set(topics)] : undefined,
+        createdAfter,
+        createdBefore,
         curationStatus,
         query
       }
@@ -368,10 +420,36 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
     let limit: number | undefined;
     let sourceType: SourceType | undefined;
     let curationStatus: CurationStatus | undefined;
+    let createdAfter: string | undefined;
+    let createdBefore: string | undefined;
+    const topics: string[] = [];
 
     for (const part of parts) {
       if (!limit && /^\d+$/.test(part)) {
         limit = Number(part);
+        continue;
+      }
+
+      const dateFilter = parseDateFilter(part);
+      if (dateFilter) {
+        if ("type" in dateFilter) {
+          return {
+            valid: false,
+            error: dateFilter.error
+          };
+        }
+
+        if (dateFilter.kind === "after") {
+          createdAfter = dateFilter.value;
+        } else {
+          createdBefore = dateFilter.value;
+        }
+        continue;
+      }
+
+      const topicFilter = parseTopicFilter(part);
+      if (topicFilter) {
+        topics.push(topicFilter);
         continue;
       }
 
@@ -397,6 +475,9 @@ function parseRetrievalCommand(text: string): ParsedCommand | null {
       retrievalOptions: {
         limit,
         sourceType,
+        topics: topics.length > 0 ? [...new Set(topics)] : undefined,
+        createdAfter,
+        createdBefore,
         curationStatus
       }
     };
@@ -462,11 +543,44 @@ function parseQueueViewCommand(text: string): ParsedCommand | null {
   const parts = rawTerms ? rawTerms.split(/\s+/) : [];
   let limit: number | undefined;
   let sourceType: SourceType | undefined;
+  let createdAfter: string | undefined;
+  let createdBefore: string | undefined;
+  let queueSort: QueueSort | undefined;
+  const topics: string[] = [];
   const statuses: CurationStatus[] = [];
 
   for (const part of parts) {
     if (!limit && /^\d+$/.test(part)) {
       limit = Number(part);
+      continue;
+    }
+
+    const dateFilter = parseDateFilter(part);
+    if (dateFilter) {
+      if ("type" in dateFilter) {
+        return {
+          valid: false,
+          error: dateFilter.error
+        };
+      }
+
+      if (dateFilter.kind === "after") {
+        createdAfter = dateFilter.value;
+      } else {
+        createdBefore = dateFilter.value;
+      }
+      continue;
+    }
+
+    const topicFilter = parseTopicFilter(part);
+    if (topicFilter) {
+      topics.push(topicFilter);
+      continue;
+    }
+
+    const normalizedSort = normalizeQueueSort(part);
+    if (!queueSort && normalizedSort) {
+      queueSort = normalizedSort;
       continue;
     }
 
@@ -495,7 +609,11 @@ function parseQueueViewCommand(text: string): ParsedCommand | null {
     retrievalOptions: {
       limit,
       sourceType,
-      curationStatuses: statuses.length > 0 ? [...new Set(statuses)] : undefined
+      topics: topics.length > 0 ? [...new Set(topics)] : undefined,
+      createdAfter,
+      createdBefore,
+      curationStatuses: statuses.length > 0 ? [...new Set(statuses)] : undefined,
+      queueSort
     }
   };
 }
@@ -505,6 +623,7 @@ function normalizeSourceType(value: string): SourceType | undefined {
   const allowed: SourceType[] = [
     "text",
     "webpage",
+    "pdf_document",
     "pubmed",
     "research_article",
     "transcript",
@@ -534,4 +653,69 @@ function normalizeQueueStatus(value: string): CurationStatus | undefined {
   }
 
   return normalizeCurationStatus(normalized);
+}
+
+function normalizeQueueSort(value: string): QueueSort | undefined {
+  const normalized = value.toLowerCase().replace(/-/g, "_");
+  if (normalized === "priority" || normalized === "oldest" || normalized === "newest") {
+    return normalized;
+  }
+
+  if (normalized === "stale" || normalized === "aging" || normalized === "aged") {
+    return "oldest";
+  }
+
+  if (normalized === "recent" || normalized === "latest") {
+    return "newest";
+  }
+
+  return undefined;
+}
+
+function normalizeRetrievalSourceReference(value: string): string | null {
+  const trimmed = value.trim().replace(/[),.;]+$/, "");
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return normalizeSourceReference(trimmed);
+  }
+
+  const pmidMatch = trimmed.match(/^(?:PMID:\s*)?(\d{5,12})$/i);
+  if (pmidMatch) {
+    return normalizeSourceReference(`PMID:${pmidMatch[1]}`);
+  }
+
+  return null;
+}
+
+function parseDateFilter(
+  part: string
+):
+  | { kind: "after" | "before"; value: string }
+  | { type: "invalid"; error: string }
+  | null {
+  const matched = part.match(/^(after|before):(.+)$/i);
+  if (!matched) {
+    return null;
+  }
+
+  const kind = matched[1].toLowerCase() as "after" | "before";
+  const value = matched[2].trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return {
+      type: "invalid",
+      error: `Invalid ${kind} filter. Use ${kind}:YYYY-MM-DD, for example ${kind}:2026-04-01.`
+    };
+  }
+
+  return { kind, value };
+}
+
+function parseTopicFilter(part: string): string | null {
+  const matched = part.match(/^(?:topic|tag):(.+)$/i);
+  if (!matched) {
+    return null;
+  }
+
+  const value = matched[1].trim();
+  return value.length > 0 ? value.toLowerCase() : null;
 }

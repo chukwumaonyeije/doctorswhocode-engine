@@ -4,16 +4,59 @@ import { exportRecordPdf } from "../export/pdf";
 import { ingestInputWithOptions } from "../ingest";
 import type { IngestedSource } from "../types";
 import { buildRecord } from "../normalize/normalizeInput";
-import { ensureDatabase, fetchQueueRecords, fetchRecentRecords, fetchRecordById, searchRecords, updateRecordCurationStatus } from "../storage/db";
+import {
+  ensureDatabase,
+  fetchQueueRecords,
+  fetchRecentRecords,
+  fetchRecordById,
+  fetchRecordBySourceReference,
+  searchRecords,
+  updateRecordCurationStatus
+} from "../storage/db";
 import { ensureStorageStructure } from "../storage/fs";
 import type { ActionArtifacts, AppAction, CanonicalAction, ParsedCommand } from "../types";
 import { AppError } from "../utils/errors";
-import { logInfo } from "../utils/logging";
+import { createRequestId, logInfo } from "../utils/logging";
 import { parseCommand } from "./parseCommand";
 
 export async function handleIncomingText(text: string): Promise<ActionArtifacts> {
   const parsed = parseCommand(text);
+  parsed.requestId = parsed.requestId ?? createRequestId("ingest");
   return handleParsedCommand(parsed);
+}
+
+export async function handleIngestedSourceAction(params: {
+  action: CanonicalAction;
+  ingested: IngestedSource;
+  requestId?: string;
+  rawRequest?: string;
+  intentLabel?: string;
+  contextNote?: string;
+  requestedFocus?: string[];
+  analysisMode?: "default" | "youtube_fast" | "youtube_deep";
+}): Promise<ActionArtifacts> {
+  await ensureStorageStructure();
+  await ensureDatabase();
+
+  const record = buildRecord(params.action, params.ingested, {
+    metadata: {
+      userIntent: params.rawRequest,
+      intentLabel: params.intentLabel,
+      contextNote: params.contextNote,
+      requestedFocus: params.requestedFocus,
+      analysisMode: params.analysisMode
+    },
+    tags: params.requestedFocus ?? []
+  });
+
+  logInfo("action_started", {
+    requestId: params.requestId,
+    action: params.action,
+    recordId: record.id,
+    intentLabel: params.intentLabel
+  });
+
+  return runAction(params.action, { record });
 }
 
 export async function handleParsedCommand(parsed: ParsedCommand): Promise<ActionArtifacts> {
@@ -45,41 +88,41 @@ export async function handleParsedCommand(parsed: ParsedCommand): Promise<Action
   }
 
   const action = parsed.action as CanonicalAction;
+  const requestId = parsed.requestId;
 
-  logInfo("ingest_started", { action });
+  logInfo("ingest_started", { requestId, action, intentLabel: parsed.intentLabel });
   const ingested = await ingestInputWithOptions(parsed.input, {
-    analysisMode: parsed.analysisMode
+    analysisMode: parsed.analysisMode,
+    requestId
   });
   logInfo("ingest_completed", {
+    requestId,
     action,
     sourceType: ingested.sourceType,
     completeness: ingested.completeness
   });
-  const record = buildRecord(action, ingested, {
-    metadata: {
-      userIntent: parsed.rawRequest,
-      intentLabel: parsed.intentLabel,
-      contextNote: parsed.contextNote,
-      requestedFocus: parsed.requestedFocus,
-      analysisMode: parsed.analysisMode
-    },
-    tags: parsed.requestedFocus ?? []
-  });
-
-  logInfo("action_started", {
+  return handleIngestedSourceAction({
     action,
-    recordId: record.id,
-    intentLabel: parsed.intentLabel
+    ingested,
+    requestId,
+    rawRequest: parsed.rawRequest,
+    intentLabel: parsed.intentLabel,
+    contextNote: parsed.contextNote,
+    requestedFocus: parsed.requestedFocus,
+    analysisMode: parsed.analysisMode
   });
-  return runAction(action, { record });
 }
 
 async function handleQueueWorkflow(parsed: ParsedCommand): Promise<ActionArtifacts> {
-  logInfo("ingest_started", { action: "queue" });
+  const requestId = parsed.requestId;
+
+  logInfo("ingest_started", { requestId, action: "queue", intentLabel: parsed.intentLabel });
   const ingested = await ingestInputWithOptions(parsed.input!, {
-    analysisMode: parsed.analysisMode
+    analysisMode: parsed.analysisMode,
+    requestId
   });
   logInfo("ingest_completed", {
+    requestId,
     action: "queue",
     sourceType: ingested.sourceType,
     completeness: ingested.completeness
@@ -100,6 +143,7 @@ async function handleQueueWorkflow(parsed: ParsedCommand): Promise<ActionArtifac
   });
 
   logInfo("action_started", {
+    requestId,
     action: "summarize",
     recordId: analysisRecord.id,
     intentLabel: parsed.intentLabel
@@ -118,6 +162,7 @@ async function handleQueueWorkflow(parsed: ParsedCommand): Promise<ActionArtifac
   });
 
   logInfo("action_started", {
+    requestId,
     action: "mdx",
     recordId: draftRecord.id,
     intentLabel: parsed.intentLabel
@@ -150,6 +195,7 @@ async function handleMdxFromRecord(recordId: string): Promise<ActionArtifacts> {
     sourceType: stored.sourceType as
       | "text"
       | "webpage"
+      | "pdf_document"
       | "pubmed"
       | "research_article"
       | "transcript"
@@ -215,9 +261,16 @@ async function handlePdfFromRecord(recordId: string): Promise<ActionArtifacts> {
 
 async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> {
   if (parsed.action === "retrieve") {
-    const record = await fetchRecordById(parsed.input!);
+    const record =
+      parsed.intentLabel === "source_retrieval"
+        ? await fetchRecordBySourceReference(parsed.input!)
+        : await fetchRecordById(parsed.input!);
     if (!record) {
-      throw new AppError(`No saved analysis found for record ID ${parsed.input}.`);
+      throw new AppError(
+        parsed.intentLabel === "source_retrieval"
+          ? `No saved analysis found for source ${parsed.input}.`
+          : `No saved analysis found for record ID ${parsed.input}.`
+      );
     }
 
     return {
@@ -226,6 +279,7 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
         `Title: ${record.title ?? "Untitled"}`,
         `Curation status: ${record.curationStatus ?? "new"}`,
         `Source type: ${record.sourceType}`,
+        `Source reference: ${record.sourceReference ?? "Unknown"}`,
         `Action: ${record.requestedAction}`,
         `Created: ${record.createdAt}`,
         "",
@@ -243,6 +297,9 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
       query,
       limit: parsed.retrievalOptions?.limit,
       sourceType: parsed.retrievalOptions?.sourceType,
+      topics: parsed.retrievalOptions?.topics,
+      createdAfter: parsed.retrievalOptions?.createdAfter,
+      createdBefore: parsed.retrievalOptions?.createdBefore,
       curationStatus: parsed.retrievalOptions?.curationStatus
     });
 
@@ -254,9 +311,11 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
       };
     }
 
-    const lines = matches.map((item) =>
-      `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
-    );
+    const lines = matches.flatMap((item) => {
+      const summaryLine = `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`;
+      const preview = formatSearchPreview(item.matchPreview);
+      return preview ? [summaryLine, `  Match: ${preview}`] : [summaryLine];
+    });
 
     return {
       reply: [
@@ -272,7 +331,11 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
     const queued = await fetchQueueRecords({
       limit: parsed.retrievalOptions?.limit,
       sourceType: parsed.retrievalOptions?.sourceType,
-      curationStatuses: parsed.retrievalOptions?.curationStatuses
+      topics: parsed.retrievalOptions?.topics,
+      createdAfter: parsed.retrievalOptions?.createdAfter,
+      createdBefore: parsed.retrievalOptions?.createdBefore,
+      curationStatuses: parsed.retrievalOptions?.curationStatuses,
+      queueSort: parsed.retrievalOptions?.queueSort
     });
 
     if (queued.length === 0) {
@@ -284,7 +347,7 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
     }
 
     const lines = queued.map((item) =>
-      `- ${item.id} | ${item.curationStatus} | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
+      `- ${item.id} | ${item.curationStatus} | ${item.ageDays}d | ${item.sourceType} | ${item.requestedAction} | ${item.title ?? "Untitled"} | ${item.createdAt}`
     );
 
     return {
@@ -300,6 +363,9 @@ async function handleRetrieval(parsed: ParsedCommand): Promise<ActionArtifacts> 
   const recent = await fetchRecentRecords({
     limit: parsed.retrievalOptions?.limit,
     sourceType: parsed.retrievalOptions?.sourceType,
+    topics: parsed.retrievalOptions?.topics,
+    createdAfter: parsed.retrievalOptions?.createdAfter,
+    createdBefore: parsed.retrievalOptions?.createdBefore,
     curationStatus: parsed.retrievalOptions?.curationStatus
   });
 
@@ -355,6 +421,15 @@ function formatListFilters(parsed: ParsedCommand): string {
   if (parsed.retrievalOptions?.curationStatus) {
     filters.push(parsed.retrievalOptions.curationStatus);
   }
+  if (parsed.retrievalOptions?.topics?.length) {
+    filters.push(`topic:${parsed.retrievalOptions.topics.join("|")}`);
+  }
+  if (parsed.retrievalOptions?.createdAfter) {
+    filters.push(`after:${parsed.retrievalOptions.createdAfter}`);
+  }
+  if (parsed.retrievalOptions?.createdBefore) {
+    filters.push(`before:${parsed.retrievalOptions.createdBefore}`);
+  }
 
   return filters.length > 0 ? ` (${filters.join(", ")})` : "";
 }
@@ -366,6 +441,18 @@ function formatQueueFilters(parsed: ParsedCommand): string {
   }
   if (parsed.retrievalOptions?.curationStatuses?.length) {
     filters.push(parsed.retrievalOptions.curationStatuses.join(", "));
+  }
+  if (parsed.retrievalOptions?.queueSort) {
+    filters.push(`sort:${parsed.retrievalOptions.queueSort}`);
+  }
+  if (parsed.retrievalOptions?.topics?.length) {
+    filters.push(`topic:${parsed.retrievalOptions.topics.join("|")}`);
+  }
+  if (parsed.retrievalOptions?.createdAfter) {
+    filters.push(`after:${parsed.retrievalOptions.createdAfter}`);
+  }
+  if (parsed.retrievalOptions?.createdBefore) {
+    filters.push(`before:${parsed.retrievalOptions.createdBefore}`);
   }
 
   return filters.length > 0 ? ` (${filters.join(" | ")})` : "";
@@ -403,4 +490,21 @@ function extractMdxSummary(reply: string): string {
   );
 
   return kept.join("\n");
+}
+
+function formatSearchPreview(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const compact = value.replace(/\s+/g, " ").trim();
+  if (!compact) {
+    return null;
+  }
+
+  if (compact.length <= 180) {
+    return compact;
+  }
+
+  return `${compact.slice(0, 177).trim()}...`;
 }

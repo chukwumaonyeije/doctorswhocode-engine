@@ -1,4 +1,5 @@
 import { renderSourceMarkdown } from "../render/markdown";
+import { buildCompactProvenanceBlock } from "../render/provenance";
 import { buildRecordPaths, writeJsonFile, writeTextFile } from "../storage/fs";
 import { persistCanonicalResult } from "../storage/recordStore";
 import type { ActionArtifacts, ActionContext } from "../types";
@@ -7,6 +8,8 @@ import { generateActionOutput } from "./shared";
 export async function runSummarizeAction({ record }: ActionContext): Promise<ActionArtifacts> {
   const output = await generateActionOutput("summarize", record);
   const paths = buildRecordPaths(record);
+  const provenanceBlock = buildCompactProvenanceBlock(record);
+  const reply = provenanceBlock ? `${provenanceBlock}\n\n${output}` : output;
 
   const savedPaths = await Promise.all([
     writeJsonFile(paths.recordJsonPath, record),
@@ -15,7 +18,7 @@ export async function runSummarizeAction({ record }: ActionContext): Promise<Act
   ]);
 
   const result = {
-    reply: output,
+    reply,
     output,
     savedPaths,
     recordId: record.id

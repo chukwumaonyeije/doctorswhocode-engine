@@ -1,7 +1,9 @@
 import type { NormalizedRecord } from "../types";
+import { buildSourceProvenanceLines } from "./provenance";
 
 export function renderSourceMarkdown(record: NormalizedRecord): string {
   const authors = record.authors.length > 0 ? record.authors.join(", ") : "Unknown";
+  const provenanceLines = buildSourceProvenanceLines(record);
 
   return [
     `# ${record.title ?? "Untitled Source"}`,
@@ -14,6 +16,7 @@ export function renderSourceMarkdown(record: NormalizedRecord): string {
     `- Authors: ${authors}`,
     `- Date: ${record.date ?? "Unknown"}`,
     `- Created at: ${record.createdAt}`,
+    ...(provenanceLines.length > 0 ? ["", ...provenanceLines] : []),
     "",
     "## Normalized Text",
     "",

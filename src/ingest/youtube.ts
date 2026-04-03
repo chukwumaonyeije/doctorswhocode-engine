@@ -1,7 +1,7 @@
 import axios from "axios";
 import { config } from "../config";
 import { AppError } from "../utils/errors";
-import { logInfo } from "../utils/logging";
+import { logInfo, logSourceCounter } from "../utils/logging";
 import type { IngestedSource } from "../types";
 
 type YoutubeTranscriptLine = {
@@ -12,6 +12,12 @@ type YoutubeTranscriptLine = {
 
 type YoutubeTranscriptApi = {
   fetchTranscript: (videoIdOrUrl: string) => Promise<YoutubeTranscriptLine[]>;
+};
+
+type TranscriptAttempt = {
+  strategy: string;
+  status: "success" | "failed" | "skipped";
+  error?: string;
 };
 
 interface YouTubeOEmbedResponse {
@@ -25,6 +31,7 @@ export async function ingestYouTube(
   url: string,
   options?: {
     allowHostedProviders?: boolean;
+    requestId?: string;
   }
 ): Promise<IngestedSource> {
   const videoId = extractYouTubeVideoId(url);
@@ -37,6 +44,20 @@ export async function ingestYouTube(
     allowHostedProviders: options?.allowHostedProviders ?? false
   });
   const transcriptLines = transcriptResult.lines ?? [];
+  const transcriptStatus = buildTranscriptStatus({
+    hasTranscript: transcriptLines.length > 0,
+    source: transcriptResult.source
+  });
+
+  logSourceCounter({
+    source: "youtube_transcript_resolution",
+    outcome: transcriptLines.length > 0 ? "success" : "failure",
+    requestId: options?.requestId,
+    classifiedSource: "transcript",
+    resolvedSourceType: transcriptLines.length > 0 ? "transcript" : "webpage",
+    completeness: transcriptLines.length > 0 ? "transcript_only" : "partial",
+    detail: transcriptLines.length > 0 ? transcriptStatus : summarizeTranscriptError(transcriptResult.error) ?? "metadata_only"
+  });
 
   const normalizedText =
     transcriptLines.length > 0
@@ -49,7 +70,8 @@ export async function ingestYouTube(
           videoId,
           title: metadata.title,
           authorName: metadata.author_name,
-          url
+          url,
+          transcriptError: transcriptResult.error
         });
 
   return {
@@ -60,7 +82,7 @@ export async function ingestYouTube(
     title: metadata.title ?? `YouTube video ${videoId}`,
     authors: metadata.author_name ? [metadata.author_name] : [],
     publication: "YouTube",
-    completeness: transcriptLines.length > 0 ? "transcript_only" : "partial",
+      completeness: transcriptLines.length > 0 ? "transcript_only" : "partial",
     tags: ["youtube", transcriptLines.length > 0 ? "transcript" : "metadata_only"],
     metadata: {
       platform: "youtube",
@@ -68,9 +90,19 @@ export async function ingestYouTube(
       authorUrl: metadata.author_url,
       thumbnailUrl: metadata.thumbnail_url,
       transcriptAvailable: transcriptLines.length > 0,
-      transcriptStatus: transcriptLines.length > 0 ? "transcript_available" : "metadata_only",
+      transcriptStatus,
       transcriptSource: transcriptResult.source,
       transcriptFetchError: transcriptResult.error
+      ,
+      transcriptLineCount: transcriptLines.length,
+      transcriptCharacterCount: transcriptLines.reduce((total, line) => total + line.text.trim().length, 0),
+      transcriptAttempts: transcriptResult.attempts,
+      transcriptProvenanceSummary: buildTranscriptProvenanceSummary({
+        status: transcriptStatus,
+        source: transcriptResult.source,
+        attempts: transcriptResult.attempts,
+        lineCount: transcriptLines.length
+      })
     }
   };
 }
@@ -126,50 +158,70 @@ async function fetchYouTubeTranscript(
   options?: {
     allowHostedProviders?: boolean;
   }
-): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string }> {
-  const attempts: string[] = [];
+): Promise<{ lines?: YoutubeTranscriptLine[]; error?: string; source?: string; attempts: TranscriptAttempt[] }> {
+  const attempts: TranscriptAttempt[] = [];
 
   const primary = await fetchTranscriptWithPrimaryStrategy(url);
   if (primary.lines?.length) {
-    return primary;
+    return {
+      ...primary,
+      attempts: [...attempts, { strategy: "youtube-transcript", status: "success" }]
+    };
   }
   if (primary.error) {
-    attempts.push(`primary:${primary.error}`);
+    attempts.push({ strategy: "youtube-transcript", status: "failed", error: primary.error });
   }
 
   const videoId = extractYouTubeVideoId(url);
   if (videoId) {
     const fallback = await fetchTranscriptWithFallbackStrategy(videoId);
     if (fallback.lines?.length) {
-      return fallback;
+      return {
+        ...fallback,
+        attempts: [...attempts, { strategy: "youtube-transcript-api", status: "success" }]
+      };
     }
     if (fallback.error) {
-      attempts.push(`fallback:${fallback.error}`);
+      attempts.push({ strategy: "youtube-transcript-api", status: "failed", error: fallback.error });
     }
   }
 
   if (options?.allowHostedProviders) {
     const supadata = await fetchTranscriptWithSupadata(url);
     if (supadata.lines?.length) {
-      return supadata;
+      return {
+        ...supadata,
+        attempts: [...attempts, { strategy: "supadata", status: "success" }]
+      };
     }
     if (supadata.error) {
-      attempts.push(`supadata:${supadata.error}`);
+      attempts.push({ strategy: "supadata", status: "failed", error: supadata.error });
     }
 
     if (videoId) {
       const fetchTranscript = await fetchTranscriptWithFetchTranscript(videoId);
       if (fetchTranscript.lines?.length) {
-        return fetchTranscript;
+        return {
+          ...fetchTranscript,
+          attempts: [...attempts, { strategy: "fetchtranscript", status: "success" }]
+        };
       }
       if (fetchTranscript.error) {
-        attempts.push(`fetchtranscript:${fetchTranscript.error}`);
+        attempts.push({ strategy: "fetchtranscript", status: "failed", error: fetchTranscript.error });
       }
     }
+  } else {
+    attempts.push({ strategy: "supadata", status: "skipped", error: "Hosted fallback disabled" });
+    attempts.push({ strategy: "fetchtranscript", status: "skipped", error: "Hosted fallback disabled" });
   }
 
   return {
-    error: attempts.length > 0 ? attempts.join(" | ") : "Transcript unavailable"
+    error:
+      attempts
+        .filter((attempt) => attempt.status === "failed")
+        .map((attempt) => `${attempt.strategy}:${attempt.error}`)
+        .join(" | ") || "Transcript unavailable",
+    attempts
   };
 }
 
@@ -465,14 +517,21 @@ function buildMetadataOnlyText(params: {
   title?: string;
   authorName?: string;
   url: string;
+  transcriptError?: string;
 }): string {
+  const guidance =
+    "Transcript text was not available from the current retrieval path. You can still get a metadata-based read now, or paste the transcript directly for a stronger analysis.";
+  const transcriptDetail = summarizeTranscriptError(params.transcriptError);
+
   return [
-    "YouTube video metadata only.",
+    "YouTube analysis ran in metadata-only mode.",
     `Title: ${params.title ?? "Unknown"}`,
     `Channel: ${params.authorName ?? "Unknown"}`,
-    `URL: ${params.url}`,
+    `Source: ${params.url}`,
     `Video ID: ${params.videoId}`,
-    "Transcript was not available from the current retrieval path."
+    ...(transcriptDetail ? [`Transcript status: ${transcriptDetail}`] : []),
+    guidance,
+    "Best fallback: paste the transcript text directly if you want a fuller source-aware review."
   ].join("\n");
 }
 
@@ -502,4 +561,70 @@ function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
   });
+}
+
+function summarizeTranscriptError(error?: string): string | null {
+  if (!error) {
+    return null;
+  }
+
+  if (/timed out/i.test(error)) {
+    return "Transcript retrieval timed out.";
+  }
+
+  if (/not configured/i.test(error)) {
+    return "Hosted transcript fallback is not configured.";
+  }
+
+  if (/http 429/i.test(error)) {
+    return "Transcript provider rate-limited the request.";
+  }
+
+  if (/http 403/i.test(error)) {
+    return "Transcript provider denied access to the video.";
+  }
+
+  if (/Transcript unavailable/i.test(error)) {
+    return "No transcript was available from the current providers.";
+  }
+
+  return "Transcript could not be retrieved from the current providers.";
+}
+
+function buildTranscriptStatus(params: {
+  hasTranscript: boolean;
+  source?: string;
+}): string {
+  if (!params.hasTranscript) {
+    return "metadata_only";
+  }
+
+  if (params.source === "youtube-transcript" || params.source === "youtube-transcript-api") {
+    return "transcript_available_local";
+  }
+
+  if (params.source === "supadata" || params.source === "fetchtranscript") {
+    return "transcript_available_hosted";
+  }
+
+  return "transcript_available";
+}
+
+function buildTranscriptProvenanceSummary(params: {
+  status: string;
+  source?: string;
+  attempts: TranscriptAttempt[];
+  lineCount: number;
+}): string {
+  if (params.status === "metadata_only") {
+    const failedStrategies = params.attempts
+      .filter((attempt) => attempt.status === "failed")
+      .map((attempt) => attempt.strategy);
+    return failedStrategies.length > 0
+      ? `Metadata only. Transcript unavailable after attempts: ${failedStrategies.join(", ")}.`
+      : "Metadata only. Transcript was not available from the configured providers.";
+  }
+
+  const sourceLabel = params.source ?? "unknown provider";
+  return `Transcript text available from ${sourceLabel} (${params.lineCount} lines).`;
 }

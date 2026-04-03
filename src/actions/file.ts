@@ -19,16 +19,13 @@ export async function runFileAction({ record }: ActionContext): Promise<ActionAr
   ]);
 
   const result = {
-    reply: [
-      "Archived successfully.",
-      "",
-      archivalNote,
-      "",
-      `Saved record: ${paths.recordJsonPath}`,
-      `Saved source: ${archivePath}`,
-      `Saved note: ${paths.summaryMarkdownPath}`,
-      `Canonical record ID: ${record.id}`
-    ].join("\n"),
+    reply: buildFileReply({
+      recordId: record.id,
+      title: record.title,
+      sourceType: record.sourceType,
+      sourceReference: record.sourceReference,
+      notePath: paths.summaryMarkdownPath
+    }),
     output: archivalNote,
     savedPaths,
     recordId: record.id
@@ -37,4 +34,31 @@ export async function runFileAction({ record }: ActionContext): Promise<ActionAr
   await persistCanonicalResult({ record, result });
 
   return result;
+}
+
+function buildFileReply(params: {
+  recordId: string;
+  title?: string;
+  sourceType: string;
+  sourceReference: string;
+  notePath: string;
+}): string {
+  const titleLine = params.title?.trim() ? `Title: ${params.title.trim()}` : "Title: Untitled";
+
+  return [
+    "Archived successfully.",
+    titleLine,
+    `Source type: ${params.sourceType}`,
+    `Source: ${shortenSourceReference(params.sourceReference)}`,
+    `Record ID: ${params.recordId}`,
+    `Saved note: ${params.notePath}`
+  ].join("\n");
+}
+
+function shortenSourceReference(sourceReference: string): string {
+  if (sourceReference.length <= 120) {
+    return sourceReference;
+  }
+
+  return `${sourceReference.slice(0, 117)}...`;
 }

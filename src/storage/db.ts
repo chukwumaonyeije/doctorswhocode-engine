@@ -1,5 +1,6 @@
 import { config, requireConfigValue } from "../config";
-import type { CurationStatus, PersistedRecordPayload } from "../types";
+import { buildSourceReferenceCandidates, normalizeSourceReference } from "./sourceReferences";
+import type { CurationStatus, PersistedRecordPayload, QueueSort } from "../types";
 
 type QueryableClient = {
   query: (sql: string, params?: unknown[]) => Promise<unknown>;
@@ -17,6 +18,7 @@ const { Pool } = require("pg") as {
 
 let pool: PoolInstance | null = null;
 let databaseReady = false;
+let databaseLastError: string | null = null;
 
 function getPool(): PoolInstance {
   if (!pool) {
@@ -72,6 +74,11 @@ export async function ensureDatabase(): Promise<void> {
       add column if not exists curation_status text not null default 'new'
     `);
     databaseReady = true;
+    databaseLastError = null;
+  } catch (error) {
+    databaseReady = false;
+    databaseLastError = error instanceof Error ? error.message : String(error);
+    throw error;
   } finally {
     client.release();
   }
@@ -79,6 +86,16 @@ export async function ensureDatabase(): Promise<void> {
 
 export function isDatabaseReady(): boolean {
   return databaseReady;
+}
+
+export function getDatabaseDiagnostics(): {
+  ready: boolean;
+  lastError: string | null;
+} {
+  return {
+    ready: databaseReady,
+    lastError: databaseLastError
+  };
 }
 
 export async function persistRecord(payload: PersistedRecordPayload): Promise<void> {
@@ -239,9 +256,97 @@ export async function fetchRecordById(recordId: string): Promise<{
   };
 }
 
+export async function fetchRecordBySourceReference(sourceReference: string): Promise<{
+  id: string;
+  slug: string;
+  sourceType: string;
+  requestedAction: string;
+  title: string | null;
+  createdAt: string;
+  output: string;
+  sourceReference?: string;
+  normalizedText?: string;
+  completeness?: string;
+  publication?: string | null;
+  date?: string | null;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  curationStatus?: CurationStatus;
+} | null> {
+  const normalizedReference = normalizeSourceReference(sourceReference);
+  const candidates = buildSourceReferenceCandidates(sourceReference);
+
+  const result = (await getPool().query(
+    `
+      select
+        id,
+        slug,
+        source_type as "sourceType",
+        requested_action as "requestedAction",
+        title,
+        created_at as "createdAt",
+        outputs->>'output' as output,
+        source_reference as "sourceReference",
+        normalized_text as "normalizedText",
+        completeness,
+        publication,
+        source_date as date,
+        tags,
+        metadata,
+        curation_status as "curationStatus",
+        case
+          when lower(source_reference) = lower($1) then 0
+          when lower(source_reference) = any($2::text[]) then 1
+          else 2
+        end as match_rank
+      from research_records
+      where lower(source_reference) = lower($1)
+         or lower(source_reference) = any($2::text[])
+      order by match_rank asc, created_at desc
+      limit 1
+    `,
+    [normalizedReference, candidates.map((candidate) => candidate.toLowerCase())]
+  )) as {
+    rows: Array<{
+      id: string;
+      slug: string;
+      sourceType: string;
+      requestedAction: string;
+      title: string | null;
+      createdAt: string;
+      output: string | null;
+      sourceReference: string;
+      normalizedText: string;
+      completeness: string;
+      publication: string | null;
+      date: string | null;
+      tags: string[] | null;
+      metadata: Record<string, unknown> | null;
+      curationStatus: CurationStatus | null;
+      match_rank: number;
+    }>;
+  };
+
+  const row = result.rows[0];
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...row,
+    output: row.output ?? "No stored output was found for this record.",
+    tags: row.tags ?? [],
+    metadata: row.metadata ?? {},
+    curationStatus: row.curationStatus ?? "new"
+  };
+}
+
 export async function fetchRecentRecords(params?: {
   limit?: number;
   sourceType?: string;
+  topics?: string[];
+  createdAfter?: string;
+  createdBefore?: string;
   curationStatus?: CurationStatus;
 }): Promise<
   Array<{
@@ -255,6 +360,9 @@ export async function fetchRecentRecords(params?: {
 > {
   const limit = Math.min(Math.max(params?.limit ?? 5, 1), 10);
   const sourceType = params?.sourceType;
+  const topics = params?.topics?.length ? params.topics.map((topic) => topic.toLowerCase()) : null;
+  const createdAfter = params?.createdAfter ?? null;
+  const createdBefore = params?.createdBefore ?? null;
   const curationStatus = params?.curationStatus;
 
   const result = (await getPool().query(
@@ -269,10 +377,28 @@ export async function fetchRecentRecords(params?: {
       from research_records
       where ($1::text is null or source_type = $1)
         and ($2::text is null or curation_status = $2)
+        and ($3::date is null or created_at::date >= $3::date)
+        and ($4::date is null or created_at::date <= $4::date)
+        and (
+          $5::text[] is null
+          or exists (
+            select 1
+            from unnest($5::text[]) as topic
+            where coalesce(title, '') ilike '%' || topic || '%'
+              or source_reference ilike '%' || topic || '%'
+              or normalized_text ilike '%' || topic || '%'
+              or coalesce(outputs->>'output', '') ilike '%' || topic || '%'
+              or exists (
+                select 1
+                from jsonb_array_elements_text(tags) as tag
+                where lower(tag) like '%' || topic || '%'
+              )
+          )
+        )
       order by created_at desc
-      limit $3
+      limit $6
     `,
-    [sourceType ?? null, curationStatus ?? null, limit]
+    [sourceType ?? null, curationStatus ?? null, createdAfter, createdBefore, topics, limit]
   )) as {
     rows: Array<{
       id: string;
@@ -290,7 +416,11 @@ export async function fetchRecentRecords(params?: {
 export async function fetchQueueRecords(params?: {
   limit?: number;
   sourceType?: string;
+  topics?: string[];
+  createdAfter?: string;
+  createdBefore?: string;
   curationStatuses?: CurationStatus[];
+  queueSort?: QueueSort;
 }): Promise<
   Array<{
     id: string;
@@ -299,10 +429,15 @@ export async function fetchQueueRecords(params?: {
     requestedAction: string;
     createdAt: string;
     curationStatus: CurationStatus;
+    ageDays: number;
   }>
 > {
   const limit = Math.min(Math.max(params?.limit ?? 10, 1), 20);
   const sourceType = params?.sourceType;
+  const topics = params?.topics?.length ? params.topics.map((topic) => topic.toLowerCase()) : null;
+  const createdAfter = params?.createdAfter ?? null;
+  const createdBefore = params?.createdBefore ?? null;
+  const queueSort = params?.queueSort ?? "priority";
   const statuses = params?.curationStatuses?.length
     ? params.curationStatuses
     : (["reviewed", "drafted", "publish_ready"] as CurationStatus[]);
@@ -315,21 +450,47 @@ export async function fetchQueueRecords(params?: {
         source_type as "sourceType",
         requested_action as "requestedAction",
         created_at as "createdAt",
-        curation_status as "curationStatus"
+        curation_status as "curationStatus",
+        greatest(0, floor(extract(epoch from (now() - created_at)) / 86400))::int as "ageDays"
       from research_records
       where ($1::text is null or source_type = $1)
         and curation_status = any($2::text[])
+        and ($3::date is null or created_at::date >= $3::date)
+        and ($4::date is null or created_at::date <= $4::date)
+        and (
+          $5::text[] is null
+          or exists (
+            select 1
+            from unnest($5::text[]) as topic
+            where coalesce(title, '') ilike '%' || topic || '%'
+              or source_reference ilike '%' || topic || '%'
+              or normalized_text ilike '%' || topic || '%'
+              or coalesce(outputs->>'output', '') ilike '%' || topic || '%'
+              or exists (
+                select 1
+                from jsonb_array_elements_text(tags) as tag
+                where lower(tag) like '%' || topic || '%'
+              )
+          )
+        )
       order by
-        case curation_status
-          when 'publish_ready' then 1
-          when 'drafted' then 2
-          when 'reviewed' then 3
-          else 4
-        end,
+        case
+          when $6::text = 'priority' then
+            case curation_status
+              when 'publish_ready' then 1
+              when 'drafted' then 2
+              when 'reviewed' then 3
+              else 4
+            end
+          else null
+        end asc nulls last,
+        case when $6::text = 'priority' then created_at end asc nulls last,
+        case when $6::text = 'oldest' then created_at end asc nulls last,
+        case when $6::text = 'newest' then created_at end desc nulls last,
         created_at desc
-      limit $3
+      limit $7
     `,
-    [sourceType ?? null, statuses, limit]
+    [sourceType ?? null, statuses, createdAfter, createdBefore, topics, queueSort, limit]
   )) as {
     rows: Array<{
       id: string;
@@ -338,6 +499,7 @@ export async function fetchQueueRecords(params?: {
       requestedAction: string;
       createdAt: string;
       curationStatus: CurationStatus;
+      ageDays: number;
     }>;
   };
 
@@ -348,6 +510,9 @@ export async function searchRecords(params: {
   query: string;
   limit?: number;
   sourceType?: string;
+  topics?: string[];
+  createdAfter?: string;
+  createdBefore?: string;
   curationStatus?: CurationStatus;
 }): Promise<
   Array<{
@@ -357,12 +522,21 @@ export async function searchRecords(params: {
     requestedAction: string;
     createdAt: string;
     curationStatus: CurationStatus;
+    matchPreview: string | null;
   }>
 > {
   const limit = Math.min(Math.max(params.limit ?? 5, 1), 10);
   const sourceType = params.sourceType;
+  const topics = params.topics?.length ? params.topics.map((topic) => topic.toLowerCase()) : null;
+  const createdAfter = params.createdAfter ?? null;
+  const createdBefore = params.createdBefore ?? null;
   const curationStatus = params.curationStatus;
-  const searchQuery = `%${params.query.trim()}%`;
+  const trimmedQuery = params.query.trim();
+  const searchQuery = `%${trimmedQuery}%`;
+  const exactQuery = trimmedQuery.toLowerCase();
+  const prefixQuery = `${exactQuery}%`;
+  const queryTerms = [...new Set(trimmedQuery.toLowerCase().split(/\s+/).filter(Boolean))];
+  const partialTermQueries = queryTerms.map((term) => `%${term}%`);
 
   const result = (await getPool().query(
     `
@@ -372,20 +546,155 @@ export async function searchRecords(params: {
         source_type as "sourceType",
         requested_action as "requestedAction",
         created_at as "createdAt",
-        curation_status as "curationStatus"
+        curation_status as "curationStatus",
+        case
+          when lower(coalesce(title, '')) = $6 then trim(coalesce(title, ''))
+          when lower(source_reference) = $6 then source_reference
+          when lower(coalesce(title, '')) like $7 then trim(coalesce(title, ''))
+          when coalesce(title, '') ilike $8 then trim(coalesce(title, ''))
+          when source_reference ilike $8 then source_reference
+          when exists (
+            select 1
+            from jsonb_array_elements_text(tags) as tag
+            where lower(tag) = any($9::text[])
+               or lower(tag) like any($10::text[])
+          )
+          then (
+            select 'Tags: ' || string_agg(tag, ', ' order by tag)
+            from (
+              select distinct tag
+              from jsonb_array_elements_text(tags) as tag
+              where lower(tag) = any($9::text[])
+                 or lower(tag) like any($10::text[])
+              limit 3
+            ) matched_tags
+          )
+          when normalized_text ilike $8 then trim(substr(normalized_text, greatest(stripos(lower(normalized_text), $6) - 50, 1), 220))
+          when coalesce(outputs->>'output', '') ilike $8 then trim(substr(coalesce(outputs->>'output', ''), greatest(stripos(lower(coalesce(outputs->>'output', '')), $6) - 50, 1), 220))
+          else null
+        end as "matchPreview",
+        (
+          case when lower(coalesce(title, '')) = $6 then 120 else 0 end +
+          case when lower(source_reference) = $6 then 140 else 0 end +
+          case when lower(coalesce(title, '')) like $7 then 60 else 0 end +
+          case when lower(source_reference) like $7 then 50 else 0 end +
+          case when coalesce(title, '') ilike $8 then 30 else 0 end +
+          case when source_reference ilike $8 then 20 else 0 end +
+          case
+            when exists (
+              select 1
+              from jsonb_array_elements_text(tags) as tag
+              where lower(tag) = any($9::text[])
+            )
+            then 25
+            else 0
+          end +
+          case
+            when exists (
+              select 1
+              from jsonb_array_elements_text(tags) as tag
+              where lower(tag) like any($10::text[])
+            )
+            then 10
+            else 0
+          end +
+          case
+            when lower(requested_action) = $6 then 16
+            when lower(requested_action) like $7 then 8
+            else 0
+          end +
+          case
+            when lower(source_type) = $6 then 12
+            when lower(source_type) like $7 then 6
+            else 0
+          end +
+          (
+            select coalesce(
+              sum(
+                case
+                  when lower(coalesce(title, '')) = term then 40
+                  when lower(coalesce(title, '')) like term || '%' then 18
+                  when lower(coalesce(title, '')) like '%' || term || '%' then 10
+                  when lower(source_reference) = term then 30
+                  when lower(source_reference) like '%' || term || '%' then 8
+                  when exists (
+                    select 1
+                    from jsonb_array_elements_text(tags) as tag
+                    where lower(tag) = term
+                  )
+                  then 12
+                  when exists (
+                    select 1
+                    from jsonb_array_elements_text(tags) as tag
+                    where lower(tag) like '%' || term || '%'
+                  )
+                  then 6
+                  when lower(normalized_text) like '%' || term || '%' then 2
+                  when lower(coalesce(outputs->>'output', '')) like '%' || term || '%' then 1
+                  else 0
+                end
+              ),
+              0
+            )
+            from unnest($9::text[]) as term
+          ) +
+          case
+            when created_at >= now() - interval '7 days' then 4
+            when created_at >= now() - interval '30 days' then 2
+            else 0
+          end
+        ) as rank
       from research_records
       where ($1::text is null or source_type = $1)
         and ($2::text is null or curation_status = $2)
+        and ($3::date is null or created_at::date >= $3::date)
+        and ($4::date is null or created_at::date <= $4::date)
         and (
-          coalesce(title, '') ilike $3
-          or source_reference ilike $3
-          or normalized_text ilike $3
-          or coalesce(outputs->>'output', '') ilike $3
+          $5::text[] is null
+          or exists (
+            select 1
+            from unnest($5::text[]) as topic
+            where coalesce(title, '') ilike '%' || topic || '%'
+              or source_reference ilike '%' || topic || '%'
+              or normalized_text ilike '%' || topic || '%'
+              or coalesce(outputs->>'output', '') ilike '%' || topic || '%'
+              or exists (
+                select 1
+                from jsonb_array_elements_text(tags) as tag
+                where lower(tag) like '%' || topic || '%'
+              )
+          )
         )
-      order by created_at desc
-      limit $4
+        and (
+          coalesce(title, '') ilike $8
+          or source_reference ilike $8
+          or normalized_text ilike $8
+          or coalesce(outputs->>'output', '') ilike $8
+          or lower(requested_action) like $7
+          or lower(source_type) like $7
+          or exists (
+            select 1
+            from jsonb_array_elements_text(tags) as tag
+            where lower(tag) = any($9::text[])
+               or lower(tag) like any($10::text[])
+          )
+        )
+      order by rank desc, created_at desc
+      limit $11
     `,
-    [sourceType ?? null, curationStatus ?? null, searchQuery, limit]
+    [
+      sourceType ?? null,
+      curationStatus ?? null,
+      createdAfter,
+      createdBefore,
+      topics,
+      exactQuery,
+      prefixQuery,
+      searchQuery,
+      queryTerms,
+      partialTermQueries,
+      limit
+    ]
   )) as {
     rows: Array<{
       id: string;
@@ -394,6 +703,8 @@ export async function searchRecords(params: {
       requestedAction: string;
       createdAt: string;
       curationStatus: CurationStatus;
+      matchPreview: string | null;
+      rank: number;
     }>;
   };
 

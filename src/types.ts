@@ -1,10 +1,12 @@
 export type CanonicalAction = "digest" | "file" | "summarize" | "mdx";
 export type AppAction = CanonicalAction | "retrieve" | "recent" | "search" | "pdf" | "curate" | "queue" | "queue_view";
 export type CurationStatus = "new" | "reviewed" | "drafted" | "publish_ready" | "archived";
+export type QueueSort = "priority" | "oldest" | "newest";
 
 export type SourceType =
   | "text"
   | "webpage"
+  | "pdf_document"
   | "pubmed"
   | "research_article"
   | "transcript"
@@ -23,6 +25,7 @@ export interface ParsedCommand {
   action?: AppAction;
   input?: string;
   error?: string;
+  requestId?: string;
   intentLabel?: string;
   contextNote?: string;
   requestedFocus?: string[];
@@ -32,8 +35,12 @@ export interface ParsedCommand {
     limit?: number;
     sourceType?: SourceType;
     query?: string;
+    topics?: string[];
+    createdAfter?: string;
+    createdBefore?: string;
     curationStatus?: CurationStatus;
     curationStatuses?: CurationStatus[];
+    queueSort?: QueueSort;
   };
   curationOptions?: {
     recordId: string;
@@ -88,13 +95,24 @@ export interface ActionContext {
 
 export interface TelegramUpdate {
   update_id: number;
-  message?: {
-    message_id: number;
-    text?: string;
-    caption?: string;
-    chat: {
-      id: number;
-    };
+  message?: TelegramMessage;
+  edited_message?: TelegramMessage;
+  channel_post?: TelegramMessage;
+  edited_channel_post?: TelegramMessage;
+}
+
+export interface TelegramMessage {
+  message_id: number;
+  text?: string;
+  caption?: string;
+  document?: {
+    file_id: string;
+    file_name?: string;
+    mime_type?: string;
+    file_size?: number;
+  };
+  chat: {
+    id: number;
   };
 }
 

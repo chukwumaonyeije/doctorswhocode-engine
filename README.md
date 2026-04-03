@@ -130,6 +130,8 @@ That matters because a PubMed abstract is not the same as a full paper, a YouTub
 - URL ingestion for accessible pages
 - PubMed ingestion
 - YouTube deep analysis with transcript fallbacks
+- stronger pasted transcript detection with first-class inline transcript handling
+- transcript provenance surfaced in digest and summary replies
 
 ### Research memory
 
@@ -171,11 +173,15 @@ That matters because a PubMed abstract is not the same as a full paper, a YouTub
 
 - `show <record-id>`
 - `retrieve <record-id>`
+- `show PMID:39371694`
+- `show https://example.com/article`
 - `recent`
 - `recent 5`
 - `recent pubmed`
+- `recent topic:cerclage after:2026-03-01`
 - `find cerclage`
 - `search physician-builder`
+- `search physician-builder topic:workflow before:2026-04-01`
 
 ### Curation
 
@@ -194,6 +200,10 @@ That matters because a PubMed abstract is not the same as a full paper, a YouTub
 - `queue publish_ready`
 - `queue blog`
 - `queue youtube drafted`
+- `queue reviewed topic:workflow after:2026-03-01`
+- `queue priority`
+- `queue oldest`
+- `queue newest`
 
 ### Compound workflows
 
@@ -219,6 +229,13 @@ file PMID:39371694
 
 ```text
 What can a doctor who codes take away from this? As a cautionary tale https://youtu.be/...
+```
+
+### Digest a pasted transcript
+
+```text
+digest Speaker 1: We rolled this out in triage first...
+Speaker 2: The workflow failed when the note stayed trapped in PDF...
 ```
 
 ### Generate an MDX draft from a saved record
@@ -345,6 +362,17 @@ Active next direction:
 - continued output and voice tuning
 
 See [ROADMAP.md](./ROADMAP.md), [TODO.md](./TODO.md), [PHASE-3-PLAN.md](./PHASE-3-PLAN.md), and [PHASE-3E-YOUTUBE-DEEP-ANALYSIS.md](./PHASE-3E-YOUTUBE-DEEP-ANALYSIS.md).
+
+## Version 2 Planning
+
+Version 2 planning is documented separately so the future build can be shaped without destabilizing the current Version 1 engine.
+
+See:
+
+- [docs/V2-INDEX.md](./docs/V2-INDEX.md)
+- [docs/V2-V1-SAFE-IMPLEMENTATION-SPEC.md](./docs/V2-V1-SAFE-IMPLEMENTATION-SPEC.md)
+- [docs/V2-APPROVED-SCOPE-CHECKLIST.md](./docs/V2-APPROVED-SCOPE-CHECKLIST.md)
+- [docs/V2-ANNOTATED-PRD.md](./docs/V2-ANNOTATED-PRD.md)
 
 ## Repository Suggestions
 

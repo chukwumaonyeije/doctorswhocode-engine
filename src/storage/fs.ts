@@ -27,7 +27,12 @@ export async function writeJsonFile(filePath: string, data: unknown): Promise<st
   return writeTextFile(filePath, `${JSON.stringify(data, null, 2)}\n`);
 }
 
-export function buildRecordPaths(record: NormalizedRecord): {
+export function buildRecordPaths(
+  record: NormalizedRecord,
+  overrides?: {
+    mdxSlug?: string;
+  }
+): {
   recordJsonPath: string;
   sourceMarkdownPath: string;
   summaryMarkdownPath: string;
@@ -35,12 +40,13 @@ export function buildRecordPaths(record: NormalizedRecord): {
   mdxPath: string;
 } {
   const baseName = `${record.createdAt.slice(0, 10)}-${record.slug}-${record.id}`;
+  const mdxBaseName = `${record.createdAt.slice(0, 10)}-${overrides?.mdxSlug ?? record.slug}-${record.id}`;
 
   return {
     recordJsonPath: path.join(config.archiveDir, "records", `${baseName}.json`),
     sourceMarkdownPath: path.join(config.archiveDir, "sources", `${baseName}.md`),
     summaryMarkdownPath: path.join(config.archiveDir, "summaries", `${baseName}.md`),
     transcriptMarkdownPath: path.join(config.archiveDir, "transcripts", `${baseName}.md`),
-    mdxPath: path.join(config.contentBlogDir, `${baseName}.mdx`)
+    mdxPath: path.join(config.contentBlogDir, `${mdxBaseName}.mdx`)
   };
 }

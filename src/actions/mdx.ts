@@ -8,18 +8,18 @@ import { generateActionOutput } from "./shared";
 
 export async function runMdxAction({ record }: ActionContext): Promise<ActionArtifacts> {
   const draftBody = await generateActionOutput("mdx", record);
-  const mdx = renderMdxDocument(record, draftBody);
-  const paths = buildRecordPaths(record);
+  const rendered = renderMdxDocument(record, draftBody);
+  const paths = buildRecordPaths(record, { mdxSlug: rendered.slug });
 
   const savedPaths = await Promise.all([
     writeJsonFile(paths.recordJsonPath, record),
     writeTextFile(paths.sourceMarkdownPath, renderSourceMarkdown(record)),
-    writeTextFile(paths.mdxPath, mdx)
+    writeTextFile(paths.mdxPath, rendered.document)
   ]);
 
   const githubSync = await syncDraftPublishOutput({
     record,
-    body: mdx,
+    body: rendered.document,
     path: paths.mdxPath,
     shouldSync: true
   });
@@ -28,15 +28,16 @@ export async function runMdxAction({ record }: ActionContext): Promise<ActionArt
     reply: [
       "MDX draft created.",
       "",
-      draftBody,
-      "",
+      `title: ${rendered.title}`,
+      `dek: ${rendered.description}`,
+      `tags: ${rendered.tags.join(", ")}`,
       `Saved MDX: ${paths.mdxPath}`,
       `Canonical record ID: ${record.id}`,
       `GitHub draft sync: ${githubSync.status}${githubSync.target ? ` (${githubSync.target})` : ""}${
         githubSync.errorMessage ? ` | ${githubSync.errorMessage}` : ""
       }`
     ].join("\n"),
-    output: mdx,
+    output: rendered.document,
     savedPaths,
     recordId: record.id
   };
