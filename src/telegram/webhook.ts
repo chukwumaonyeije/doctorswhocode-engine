@@ -271,11 +271,14 @@ function inferUploadedPdfRequest(
   }
 
   const lower = trimmed.toLowerCase();
+  const requestedFocus = inferUploadRequestedFocus(lower);
+
   if (/\b(mdx|blog|draft|article)\b/.test(lower)) {
     return {
       action: "mdx",
       rawRequest: trimmed,
-      intentLabel: "telegram_pdf_upload_publish"
+      intentLabel: "telegram_pdf_upload_publish",
+      requestedFocus
     };
   }
 
@@ -283,24 +286,27 @@ function inferUploadedPdfRequest(
     return {
       action: "file",
       rawRequest: trimmed,
-      intentLabel: "telegram_pdf_upload_archive"
+      intentLabel: "telegram_pdf_upload_archive",
+      requestedFocus
     };
   }
 
-  if (/\b(summarize|summary|analy[sz]e|review|risk|risks|flag|flags)\b/.test(lower)) {
+  if (/\b(summarize|summary|analy[sz]e|review|risk|risks|flag|flags|what matters|what\'?s in)\b/.test(lower)) {
+    const summaryFocus = lower.match(/\b(risk|risks|flag|flags)\b/) ? mergeRequestedFocus(requestedFocus, "critical_flags") : requestedFocus;
     return {
       action: "summarize",
       rawRequest: trimmed,
       intentLabel: /\b(risk|risks|flag|flags)\b/.test(lower) ? "telegram_pdf_upload_risk_review" : "telegram_pdf_upload_summary",
-      requestedFocus: /\b(risk|risks|flag|flags)\b/.test(lower) ? ["critical_flags"] : undefined
+      requestedFocus: summaryFocus
     };
   }
 
-  if (/\b(digest|takeaways|key points|brief)\b/.test(lower)) {
+  if (/\b(digest|takeaways|key points|brief|why it matters)\b/.test(lower)) {
     return {
       action: "digest",
       rawRequest: trimmed,
-      intentLabel: "telegram_pdf_upload_digest"
+      intentLabel: "telegram_pdf_upload_digest",
+      requestedFocus
     };
   }
 
@@ -308,7 +314,17 @@ function inferUploadedPdfRequest(
     return {
       action: lower as CanonicalAction,
       rawRequest: trimmed,
-      intentLabel: "telegram_pdf_upload"
+      intentLabel: "telegram_pdf_upload",
+      requestedFocus
+    };
+  }
+
+  if (requestedFocus.length > 0) {
+    return {
+      action: "summarize",
+      rawRequest: trimmed,
+      intentLabel: "telegram_pdf_upload_summary",
+      requestedFocus
     };
   }
 
@@ -326,4 +342,30 @@ function stripPdfExtension(value: string): string | undefined {
 
 function getTelegramMessage(update: TelegramUpdate): TelegramMessage | undefined {
   return update.message ?? update.edited_message ?? update.channel_post ?? update.edited_channel_post;
+}
+
+function inferUploadRequestedFocus(text: string): string[] {
+  const focus: string[] = [];
+
+  if (/\b(risk|risks|flag|flags|critical|red flag)\b/.test(text)) {
+    focus.push("critical_flags");
+  }
+
+  if (/\b(physician developer|physician-builder|doctor developer|clinical workflow)\b/.test(text)) {
+    focus.push("physician_builder");
+  }
+
+  if (/\b(blog|mdx|publish|article)\b/.test(text)) {
+    focus.push("publishable_output");
+  }
+
+  if (/\b(project|implementation|build|architecture|system)\b/.test(text)) {
+    focus.push("implementation_context");
+  }
+
+  return [...new Set(focus)];
+}
+
+function mergeRequestedFocus(existing: string[], next: string): string[] {
+  return [...new Set([...existing, next])];
 }
