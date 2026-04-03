@@ -397,7 +397,18 @@ function deriveTitleFromSource(sourceReference: string): string {
 }
 
 function stripPdfExtension(value: string): string {
-  return value.replace(/\.pdf$/i, "") || "PDF Document";
+  const withoutExtension = value.replace(/\.pdf$/i, "").trim();
+  if (!withoutExtension) {
+    return "PDF Document";
+  }
+
+  const normalized = withoutExtension
+    .replace(/[_]+/g, " ")
+    .replace(/\s*-\s*/g, " - ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return normalized || "PDF Document";
 }
 
 function decodeBase64Pdf(value: string): Uint8Array {
