@@ -53,7 +53,8 @@ export async function ingestInputWithOptions(
       case "transcript":
         if (/(youtube\.com|youtu\.be)/i.test(input)) {
           ingested = await ingestYouTube(input, {
-            allowHostedProviders: options?.analysisMode === "youtube_deep",
+            allowHostedProviders:
+              options?.analysisMode === "youtube_deep" || options?.analysisMode === "youtube_fast",
             requestId: options?.requestId
           });
           break;
