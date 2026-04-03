@@ -589,8 +589,8 @@ export async function searchRecords(params: {
               limit 3
             ) matched_tags
           )
-          when normalized_text ilike $8 then trim(substr(normalized_text, greatest(stripos(lower(normalized_text), $6) - 50, 1), 220))
-          when coalesce(outputs->>'output', '') ilike $8 then trim(substr(coalesce(outputs->>'output', ''), greatest(stripos(lower(coalesce(outputs->>'output', '')), $6) - 50, 1), 220))
+          when normalized_text ilike $8 then trim(substr(normalized_text, greatest(strpos(lower(normalized_text), $6) - 50, 1), 220))
+          when coalesce(outputs->>'output', '') ilike $8 then trim(substr(coalesce(outputs->>'output', ''), greatest(strpos(lower(coalesce(outputs->>'output', '')), $6) - 50, 1), 220))
           else null
         end as "matchPreview",
         (
