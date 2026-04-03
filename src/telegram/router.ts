@@ -497,8 +497,12 @@ function formatSearchPreview(value: string | null | undefined): string | null {
     return null;
   }
 
-  const compact = value.replace(/\s+/g, " ").trim();
+  const compact = sanitizeSearchPreview(value);
   if (!compact) {
+    return null;
+  }
+
+  if (looksLikeNoisyPdfSnippet(compact)) {
     return null;
   }
 
@@ -507,4 +511,23 @@ function formatSearchPreview(value: string | null | undefined): string | null {
   }
 
   return `${compact.slice(0, 177).trim()}...`;
+}
+
+function sanitizeSearchPreview(value: string): string {
+  return value
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function looksLikeNoisyPdfSnippet(value: string): boolean {
+  const words = value.split(/\s+/).filter(Boolean);
+  if (words.length < 6) {
+    return false;
+  }
+
+  const noisyWordCount = words.filter((word) => /[^A-Za-z0-9,.;:()'"%/-]/.test(word)).length;
+  const punctuationRuns = (value.match(/[^\w\s]{3,}/g) ?? []).length;
+
+  return noisyWordCount >= Math.ceil(words.length * 0.3) || punctuationRuns > 0;
 }
