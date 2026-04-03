@@ -545,8 +545,13 @@ export async function searchRecords(params: {
   const searchQuery = `%${trimmedQuery}%`;
   const exactQuery = trimmedQuery.toLowerCase();
   const prefixQuery = `${exactQuery}%`;
+  const normalizedQuery = normalizeSearchText(trimmedQuery);
+  const normalizedSearchQuery = `%${normalizedQuery}%`;
+  const normalizedPrefixQuery = `${normalizedQuery}%`;
   const queryTerms = [...new Set(trimmedQuery.toLowerCase().split(/\s+/).filter(Boolean))];
   const partialTermQueries = queryTerms.map((term) => `%${term}%`);
+  const normalizedQueryTerms = [...new Set(normalizedQuery.split(/\s+/).filter(Boolean))];
+  const normalizedPartialTermQueries = normalizedQueryTerms.map((term) => `%${term}%`);
 
   const result = (await getPool().query(
     `
@@ -560,9 +565,15 @@ export async function searchRecords(params: {
         case
           when lower(coalesce(title, '')) = $6 then trim(coalesce(title, ''))
           when lower(source_reference) = $6 then source_reference
+          when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') = $11 then trim(coalesce(title, ''))
+          when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') = $11 then source_reference
           when lower(coalesce(title, '')) like $7 then trim(coalesce(title, ''))
+          when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') like $12 then trim(coalesce(title, ''))
           when coalesce(title, '') ilike $8 then trim(coalesce(title, ''))
+          when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') like $12 then source_reference
           when source_reference ilike $8 then source_reference
+          when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') like $13 then trim(coalesce(title, ''))
+          when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') like $13 then source_reference
           when exists (
             select 1
             from jsonb_array_elements_text(
@@ -596,10 +607,16 @@ export async function searchRecords(params: {
         (
           case when lower(coalesce(title, '')) = $6 then 120 else 0 end +
           case when lower(source_reference) = $6 then 140 else 0 end +
+          case when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') = $11 then 110 else 0 end +
+          case when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') = $11 then 130 else 0 end +
           case when lower(coalesce(title, '')) like $7 then 60 else 0 end +
           case when lower(source_reference) like $7 then 50 else 0 end +
+          case when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') like $12 then 55 else 0 end +
+          case when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') like $12 then 45 else 0 end +
           case when coalesce(title, '') ilike $8 then 30 else 0 end +
           case when source_reference ilike $8 then 20 else 0 end +
+          case when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') like $13 then 28 else 0 end +
+          case when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') like $13 then 22 else 0 end +
           case
             when exists (
               select 1
@@ -643,10 +660,16 @@ export async function searchRecords(params: {
               sum(
                 case
                   when lower(coalesce(title, '')) = term then 40
+                  when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') = term then 36
                   when lower(coalesce(title, '')) like term || '%' then 18
+                  when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') like term || '%' then 16
                   when lower(coalesce(title, '')) like '%' || term || '%' then 10
+                  when regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') like '%' || term || '%' then 9
                   when lower(source_reference) = term then 30
+                  when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') = term then 26
+                  when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') like term || '%' then 12
                   when lower(source_reference) like '%' || term || '%' then 8
+                  when regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') like '%' || term || '%' then 7
                   when exists (
                     select 1
                     from jsonb_array_elements_text(
@@ -676,7 +699,7 @@ export async function searchRecords(params: {
               ),
               0
             )
-            from unnest($9::text[]) as term
+            from unnest($14::text[]) as term
           ) +
           case
             when created_at >= now() - interval '7 days' then 4
@@ -713,6 +736,8 @@ export async function searchRecords(params: {
         and (
           coalesce(title, '') ilike $8
           or source_reference ilike $8
+          or regexp_replace(lower(coalesce(title, '')), '[^a-z0-9]+', ' ', 'g') like $13
+          or regexp_replace(lower(source_reference), '[^a-z0-9]+', ' ', 'g') like $13
           or normalized_text ilike $8
           or coalesce(outputs->>'output', '') ilike $8
           or lower(requested_action) like $7
@@ -730,7 +755,7 @@ export async function searchRecords(params: {
           )
         )
       order by rank desc, created_at desc
-      limit $11
+      limit $15
     `,
     [
       sourceType ?? null,
@@ -743,6 +768,10 @@ export async function searchRecords(params: {
       searchQuery,
       queryTerms,
       partialTermQueries,
+      normalizedQuery,
+      normalizedPrefixQuery,
+      normalizedSearchQuery,
+      normalizedQueryTerms,
       limit
     ]
   )) as {
@@ -759,6 +788,10 @@ export async function searchRecords(params: {
   };
 
   return result.rows;
+}
+
+function normalizeSearchText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 export async function updateRecordCurationStatus(recordId: string, status: CurationStatus): Promise<{
