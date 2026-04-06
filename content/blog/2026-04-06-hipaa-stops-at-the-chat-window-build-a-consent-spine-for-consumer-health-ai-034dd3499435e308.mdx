@@ -1,0 +1,77 @@
+---
+title: "HIPAA Stops at the Chat Window: Build a Consent Spine for Consumer Health AI"
+slug: "hipaa-stops-at-the-chat-window-build-a-consent-spine-for-consumer-health-ai"
+description: "Patients tell chatbots what they hide from us. The law ignores it. Physicians should design the rule and the rails."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["privacy", "ai", "governance"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+A chat window at midnight is now the most candid room in healthcare. Patients type what they will not say in clinic. None of that honesty is protected by the rules we keep citing.
+
+That is a governance failure, not a patient failure. We built a system where the most honest health story lives outside the chart and outside the law.
+
+## What the source actually supports
+
+Henry Bair recently argued for a federal privacy protection built for consumer health AI, not a kludgy HIPAA extension. His core claims are supported by public guidance and enforcement, even if the piece is a perspective, not a trial.
+
+- HIPAA covers data held by covered entities and their business associates. HHS has been explicit that, once a patient directs a covered entity to send data to a third‑party app, HIPAA generally does not control that app unless it is itself covered.
+- KFF reports that about one third of adults used AI for health information or advice in the past year. Of those, roughly 4 in 10 uploaded personal medical information. Most are worried about privacy, yet they still talk.
+- The FTC has already nailed companies like GoodRx and BetterHelp for misuse of health data outside HIPAA’s perimeter, including sharing mental health information for advertising after promising confidentiality.
+
+That is enough to act. We do not need perfect epidemiology to fix a perimeter error.
+
+## The architecture keeps honesty outside the chart
+
+The usual framing talks about patient education and consent boxes. That misses the point. The boundary problem is structural.
+
+- HIPAA’s perimeter tracks billing architecture, not where patients actually speak. Covered entities and BAAs dominate the clinic stack. The candid narrative now happens in consumer apps that sit outside that stack by design.
+- Ad-tech incentives reward secondary use. Without a bright-line rule, default data flows funnel honest disclosures into profiling, targeting, and model training.
+- EHR friction pushes nuance off-chart. Patients know that every sentence lands in a permanent institutional record. So they say the personal parts somewhere else.
+
+Honesty migrated to where the workflow was fast, private, and not coded for reimbursement. Our law stayed stapled to the billing boundary.
+
+## Build a consent spine for consumer health AI
+
+Do not stretch 1996 paperwork around a 2026 interface. Build a federal rule and a reference stack that follow the conversation, not the org chart.
+
+## What the rule should do:
+
+- Scope by behavior, not entity. Define consumer-disclosed health content as anything a person reasonably intends as health information in an interactive AI or app. If you process that, you are in scope.
+- Set bright lines. No ads, no cross-context behavioral profiling, no data brokerage. No training on user-generated health content without explicit, separate, revocable opt in.
+- Require conversation-level consent. Plain-language prompts at the point of disclosure. No pre-checked boxes. No dark patterns.
+- Mandate deletion, audit, and portability. Standard APIs to export, redact, and destroy conversation data. Verifiable deletion receipts. Tamper-evident logs.
+- Separate inference from improvement. Default the model to process health conversations in a protected enclave. Improvement uses require a second, affirmative decision.
+- Enforce jointly. Give HHS OCR, FTC, and state AGs authority. Include a private right of action for egregious misuse.
+
+## What the reference stack should ship:
+
+- A consent spine: an open specification for consent tokens attached to each turn of a conversation, with machine-readable permissions that follow the data.
+- Sticky privacy metadata: do-not-train, do-not-share flags that travel across systems, with penalties for stripping them.
+- A certification and safe harbor: measurable controls, attack simulations for reidentification and leakage, and a public registry of compliant tools.
+- Default local processing where feasible and short retention windows where it is not.
+
+Physicians should help draft this. We know what “sensitive” actually means in context. We can design prompts that reflect clinical risk, not marketing risk.
+
+## What physician-builders should ship now
+
+Do not wait for Congress. Build clinic and product workflows that align with the rule we need.
+
+- Ask, then protect. Add one intake question: Did you consult an AI tool about this issue? Offer a simple pathway to import or summarize that chat on the patient’s terms.
+- Offer a safe tool. If your system deploys an AI assistant, bind it under a BAA or the proposed rule’s standards. Publish a one-page data sheet that states what is collected, where it lives, how long, and who can see it.
+- Cut off leakage. Ban third-party trackers, pixels, and analytics SDKs from any route that can touch health disclosures. Audit regularly and publish results.
+- Build summaries, not surveillance. Create patient-controlled summaries from off-chart chats that can be attached to the record with reversible consent and clear scope.
+- Measure the right metrics. Track patient-reported candor, import rates of AI summaries, deletion requests honored, and leakage incidents. Report quarterly.
+
+This is product work and governance work. Physicians should own both.
+
+## Choose to build or be built
+
+Patients already moved. The most honest health conversations live in systems we did not design and laws we did not write.
+
+If we sit out, ad-tech will write the standard. If we build, we can align speed with safety. I want a future where my patient can speak freely at midnight and still be protected at noon. That will not happen by accident. It will happen because physicians wrote the rule and shipped the rails.
