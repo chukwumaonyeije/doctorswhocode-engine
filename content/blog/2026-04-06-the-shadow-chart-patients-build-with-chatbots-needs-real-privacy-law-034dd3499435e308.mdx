@@ -1,0 +1,74 @@
+---
+title: "The Shadow Chart Patients Build With Chatbots Needs Real Privacy Law"
+slug: "the-shadow-chart-patients-build-with-chatbots-needs-real-privacy-law"
+description: "Patients confess more to AI than to us, yet those conversations sit outside HIPAA; physicians should help define and demand a federal consumer health AI standard."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["privacy", "ai-in-healthcare", "policy"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+A patient will tell a chatbot what they will not tell me. Night sweats, panic, the lab result they do not understand. None of it lives in the chart. All of it shapes care.
+
+We still pretend this is a counseling problem. It is not. It is an architecture problem. The most honest health conversations now happen outside HIPAA.
+
+## What the source actually supports
+
+Henry Bair, MD, MBA, wrote a perspective arguing for a federal privacy rule built for consumer health AI. His core claims track what we see in clinic. HIPAA governs covered entities and their business associates. It does not generally cover consumer AI platforms once patients move data there.
+
+He cites KFF polling: roughly a third of adults used AI for health information or advice in the past year. A large share uploaded personal medical information into AI tools despite widespread privacy concern. He references FTC actions against GoodRx and BetterHelp. Both involved health data that sat outside HIPAA’s protection and was used in ways patients would never accept in a clinic.
+
+This is commentary, not a systematic review. The statistics come from public polling and enforcement cases, not randomized trials. The point stands. Patients are building a shadow record in tools the law barely touches.
+
+## The problem persists because the system pays for it
+
+This is not about patient naivete. It is about incentives and defaults.
+
+- Adtech economics reward retention, profiling, and reuse. Free chatbots are not charities. They monetize attention and data.
+- Product analytics ship on by default. Every keystroke is telemetry unless a privacy architecture turns it off.
+- HIPAA’s scope is narrow by design. It protects data held by covered entities. It does not define a duty of confidentiality for consumer AI.
+- Governance is fragmented. HHS regulates HIPAA actors. FTC polices unfair and deceptive practices. ONC certifies EHRs, not chatbots. No one owns consumer health AI privacy end to end.
+
+We trained clinicians to fear the permanent chart. Patients learned the same lesson. So they tell the truth somewhere else.
+
+## Build a physician-grade privacy baseline for consumer health AI
+
+We should stop waiting for a perfect law and start defining a standard doctors can defend. Then push it into procurement, certification, and federal rulemaking.
+
+## Here is a concrete baseline I would ship:
+
+- No training on user conversations. Ever. Use strict purpose limitation and hard technical controls that block conversations from model updates.
+- Retention off by default. If data must be stored, set short, disclosed TTLs with user-set timers. Erasure must be real and verifiable.
+- Data minimization. Collect only what the prompt needs. Strip identifiers before compute. Make attachment upload opt-in and scoped.
+- On-device or private compute first. If cloud is used, require encryption in transit and at rest plus confidential computing or equivalent isolation.
+- Transparent consent that is machine-readable and revocable. One screen, plain language, specific purposes. No dark patterns.
+- Signed, user-facing audit trails. Every share, every recipient, every purpose, with timestamps and hashes. Exportable and human-readable.
+- A privacy budget for analytics. Aggregate only. No cross-app tracking. No ad tech pixels. Ban third-party SDKs unless independently audited.
+- Breach response with real teeth. Statutory damages, private right of action, and deletion by default for violators.
+- A visible certification mark. Think ENERGY STAR for health AI privacy. Criteria published. Labs test builds against the spec. Annual re-certification.
+
+Name it something patients can remember. For example, “Clinician-Grade Privacy for Consumer Health AI.” Then require that mark in hospital procurement, payer programs, and EHR marketplaces.
+
+## Clinic workflows that meet patients where they already are
+
+Policy will lag. Our workflows do not have to.
+
+- Ask, every visit: “Have you used an AI tool about this issue?” Normalize the question. Make it part of the intake template.
+- Offer a bridge, not a scold. Provide a QR or patient portal link where they can paste or upload AI conversation excerpts with built-in redaction.
+- Build a “shadow-to-chart” note type. Store patient-supplied AI dialogues in a tagged, non-billing section with clear provenance and risk flags.
+- Auto-redact and summarize. Run uploads through local de-identification and a synthesizer that lifts meds, symptoms, and timelines. Keep originals view-restricted.
+- Teach consent literacy. One handout. One minute. “What to check before you share health info with a chatbot.” Give patients agency without shaming.
+
+If we make it easy and safe to bring the shadow record into the light, care improves. So does trust.
+
+## The mandate for doctors who code
+
+Bair is right about the gap. Patients are most honest where the law is weakest. That is not on them. That is on us.
+
+Physicians must write the spec we want enforced. Publish a clinician-grade privacy baseline. Pilot it in our own tools. Demand it in contracts. Hand it to FTC, HHS, and ONC with test suites, not slogans.
+
+When doctors build, we change defaults. We turn candor into care without turning patients into product. That is the future I want to practice in, and it is ours to build now.
