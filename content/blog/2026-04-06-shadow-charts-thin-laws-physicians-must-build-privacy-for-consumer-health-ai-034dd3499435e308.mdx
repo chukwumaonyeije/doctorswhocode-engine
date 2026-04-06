@@ -1,0 +1,64 @@
+---
+title: "Shadow Charts, Thin Laws: Physicians Must Build Privacy for Consumer Health AI"
+slug: "shadow-charts-thin-laws-physicians-must-build-privacy-for-consumer-health-ai"
+description: "Patients now confide more to chatbots than to us, and HIPAA does not cover it; physicians who code must define and ship the privacy rule and the rails."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["privacy", "ai-in-healthcare", "health-policy", "physician-builders"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+I have watched patients hand me perfect retinas and then hand a chatbot their fears. They describe headache patterns, trauma, and family histories to an app that is not bound to protect them.
+
+That candor is not a sideshow. It is a shadow chart. It sits outside our EHRs and outside the law most Americans think guards their health privacy.
+
+If we leave this to platforms and ad tech, we will get surveillance with bedside manner. If physicians build, we can get confidentiality without the white coat.
+
+## The shadow chart patients trust
+
+Midnight chat offers speed, no waiting room, and no automatic entry into the chart. That architecture invites honesty. Patients know the clinic is permanent record. They know the chat box feels ephemeral, even when it is not.
+
+The result is a parallel health narrative that can be more complete and more human than the official chart. It shapes how people medicate, when they seek care, and how they interpret our orders. We ignore it at our patients' risk.
+
+## HIPAA stops where consumer AI begins
+
+HIPAA is a scope rule. It protects data held by covered entities and their business associates. It does not generally bind consumer AI tools that patients use on their own. When a patient directs data to a third-party app that is not acting for a covered entity, HIPAA steps back.
+
+That gap is not a bug in legal drafting. It is a design choice from the 1990s, built for claims clearinghouses and hospital fax machines. Today, it leaves the most candid conversations outside any health-grade privacy duty.
+
+## What the source actually supports
+
+Henry Bair, MD, MBA, argues for a federal privacy protection built for consumer health AI. His perspective piece is not a systematic review or new primary dataset. It is a clinician’s argument with concrete touchpoints.
+
+He notes that HHS has clarified HIPAA’s limits for third-party apps. He cites KFF polling that about one-third of adults used AI for health information or advice in the past year, that four in ten of those users uploaded personal medical information, and that 77% of the public is concerned about AI health privacy. He also points to FTC actions against GoodRx and BetterHelp that involved health data outside HIPAA’s reach, including allegations of sharing mental health information for advertising after promising confidentiality. The evidence is partial but directionally clear. Patients are using AI for health, privacy expectations are high, and current rules do not reliably protect them.
+
+## Build the rule and the rails
+
+Do not stretch HIPAA over everything with a chat box. Ship a modern, federal Consumer Health AI Privacy Rule that follows the data and the function, not the entity.
+
+- Scope by activity: any tool that collects, infers, or processes health-related data from a consumer, whether typed, uploaded, or predicted, triggers duties.
+- Duties that matter: strict purpose limitation to care or consumer-requested features, data minimization, no ads or tracking identifiers, no sale, opt-in model training with a visible Do Not Train default, short retention with deletion controls, and security that meets a published baseline.
+- Transparency with receipts: plain-language privacy receipts per session that state what was captured, what was inferred, where it lives, and when it will be deleted. Not a 20-page policy. A single screen you can email to a patient.
+- Interop without backfire: a standard FHIR-based export of patient-approved summaries from consumer AI to clinicians that respects patient privacy choices and does not drag ad tech IDs into the EHR. Think DocumentReference with a privacy header, not a raw transcript dump.
+- Enforcement with teeth: FTC and state AG authority, audit rights, and a private right of action with statutory damages. Safe harbors for open implementations that pass independent privacy tests.
+
+Rules without rails stall. We should also ship open SDKs and reference services that make compliance the default. On-device by default for sensitive modes. End-to-end encryption for synced history. A one-line flag to disable data retention. A standard consent component that is usable on a phone by a tired human at 2 a.m.
+
+## Physician-builders: ship privacy by default
+
+Here is the build list I would hold my own product to:
+
+- Local-first sensitive mode that never leaves the device unless the patient taps Share to Clinician.
+- Do Not Train set to true by default, with a visible toggle and a per-session privacy receipt.
+- A narrow, documented data schema for any cloud call. No analytics beacons, no third-party pixels, no ad IDs.
+- A clinician intake pathway that accepts a patient-signed AI summary via FHIR, labels provenance, and keeps ad tech out of the chart.
+- A red-team privacy test suite that tries reidentification, linkage, and policy bypass before every release, with results published.
+- A clear delete path. One button, irreversible, with cryptographic deletion for backups inside a defined window.
+
+If you run a clinic, set expectations now. Ask patients if they used an AI tool for this problem. Offer a safe way to share a summary. Tell them what not to upload and why. That is harm reduction until the rule lands.
+
+We can wait for platforms to discover ethics when it is profitable. Or we can write the standard of care for privacy and code it into the tools our patients already trust. No one is coming to do this for us. Physicians who code should define the rule, build the rails, and make honesty safe again.
