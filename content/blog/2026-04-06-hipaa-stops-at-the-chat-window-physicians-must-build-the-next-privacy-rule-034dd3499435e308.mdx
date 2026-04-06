@@ -1,0 +1,66 @@
+---
+title: "HIPAA Stops at the Chat Window. Physicians Must Build the Next Privacy Rule."
+slug: "hipaa-stops-at-the-chat-window-physicians-must-build-the-next-privacy-rule"
+description: "Patients tell chatbots what they will not tell us, and that honesty lives outside HIPAA. We need a physician-built privacy standard for consumer health AI."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["ai", "privacy", "hipaa", "physician-builders"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+The most complete history in my clinic last month was not in the chart. It was in a patient's late-night chatbot thread about headaches, fear, and family history. She told the bot everything. She told us almost none of it.
+
+We keep pretending this is a misinformation problem. It is a boundary problem. Our privacy perimeter ends at the portal. Patients now live outside it.
+
+## The wrong privacy perimeter
+
+HIPAA protects data inside covered entities and their contractors. It does not protect most consumer AI conversations. The most honest disclosures now happen in systems designed for engagement and growth, not for clinical duty of care.
+
+Asking Congress to stretch a 1996 law over every chatbot is lazy architecture. The workflows have changed. The incentives have changed. Our privacy model has not.
+
+## What the source actually supports
+
+Henry Bair’s MedPage Today perspective makes the core point clearly: HIPAA generally does not apply to consumer AI tools, even when the content is deeply medical. He cites KFF polling that one-third of adults used AI for health information or advice in the past year. Of those, about 40% uploaded personal medical information. Most are worried about privacy anyway.
+
+The FTC’s actions against GoodRx and BetterHelp show how health-adjacent consumer platforms can quietly route intimate data into advertising and analytics. Those cases sit outside HIPAA. This is opinion plus public enforcement records and polling, not randomized evidence. It is enough to prove the gap is real and harmful.
+
+## The incentive architecture that leaks your secrets
+
+Why does this persist? Because our governance draws the line around institutions, not around intent. If a patient talks to a hospital, it is PHI. If a patient talks about the same symptoms to a chatbot on a phone, it becomes ad-tech exhaust unless the vendor chooses restraint.
+
+EHR vendors optimize for retention and compliance. Consumer AI firms optimize for engagement, model improvement, and growth. There is no common contract that binds health-context conversations to clinical-grade privacy when they happen outside the hospital. The result is a shadow health record with zero duty of care.
+
+## What physician-builders should ship next
+
+We cannot wait for perfect law. We can ship privacy as product and protocol right now. Here is a concrete build plan I would adopt:
+
+- Protected Health Conversation flag: A standard header that marks a session as health-context. It travels with the data across services. Training and third-party sharing must be blocked when this flag is present.
+- Consent as interface, not policy: Per-session scopes that are legible. Store, do not store, share to clinician, do not share. Defaults to no retention. Make the choice explicit and reversible.
+- Data minimization by default: Strip identifiers at ingest. Keep structured summaries locally. If you must call external models, send the minimum necessary and encrypt in transit and at rest.
+- No training on prompts or outputs: Contractually and technically. Provide a signed data-handling manifest for auditors and users. Publish a hash of the manifest to make tampering evident.
+- On-device or trusted execution by default: Offer an on-device model tier for sensitive use. If using cloud, use compute that enforces memory isolation and zero persistent logs.
+- Right to delete with proof: Provide deletion receipts with verifiable logs that show what was deleted, where, and when. Make it easy to trigger from within the conversation.
+- Share-to-chart as an explicit action: Let patients send a redacted summary to their clinician. Use a standard FHIR artifact for provenance. Never backdoor the chart.
+- Incident drills and metrics: Track time-to-deletion, prompt leakage rate on red-team tests, and third-party call inventory. Publish the numbers quarterly.
+
+Package this as an open SDK and a reference spec any consumer health AI can adopt in a week, not a quarter. Ship a public test harness that fails loudly when vendors cheat.
+
+## Governance we should demand
+
+We also need a federal rule built for consumer health AI. Not a stretched HIPAA. A targeted standard with three bright lines:
+
+- If users disclose symptoms, diagnoses, treatments, or related fears, the conversation is PHI-equivalent. No advertising, no data brokerage, no model training without fresh, specific consent.
+- Mandatory transparency: plain-language data manifests, independent audits, and breach reporting to the FTC. Deletion must be real and provable.
+- Safe harbor for strong architecture: on-device inference, zero retention, and independent audits earn expedited certification and preemption of weaker state patchwork.
+
+Give the FTC and HHS OCR joint authority. Tie certification to distribution channels. If you want placement in an app store under “health,” you meet the standard.
+
+## Build or get built over
+
+Patients have already moved the most honest part of their care outside our walls. We can complain, or we can build the boundary where they live now. If we sit out, ad-tech will write the rules.
+
+Physicians know what harm looks like and what duty feels like. That is exactly who should design the privacy contract for health AI. Draw the new perimeter. Ship it. Then make Washington catch up.
