@@ -1,0 +1,75 @@
+---
+title: "HIPAA Stops at the Chat Window: A Physician Standard for Consumer Health AI"
+slug: "hipaa-stops-at-the-chat-window-a-physician-standard-for-consumer-health-ai"
+description: "Patients are having their most honest health conversations with chatbots outside HIPAA, and doctors need to build the rule and the runtime."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["privacy", "ai-in-healthcare", "physician-builders"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+She showed me a 40-page chat thread on her phone. Headaches, family history, fear of an aneurysm, and the things she had never told a clinician. The most complete health narrative in the room lived outside the chart.
+
+We keep arguing about AI hallucinations. The real risk is governance. Patients are moving sensitive health stories into systems built for ad-tech economics, not care.
+
+## What the evidence actually supports
+
+A recent perspective notes what many of us see: patients are workshopping symptoms and plans with general chatbots. It cites KFF polling that one-third of adults used AI for health information in the past year, and 4 in 10 of those uploaded personal medical data. Seventy-seven percent were worried about privacy even as they clicked send.
+
+The piece points to FTC cases against GoodRx and BetterHelp. Both involved health data outside HIPAA and deceptive downstream use. This is not a randomized trial. It is a credible signal from enforcement and polling that the shadow record is real and exposed.
+
+## The structural gap: scope, incentives, and logs that never die
+
+HIPAA regulates covered entities and their business associates. Consumer AI platforms are usually neither. Once data leaves a covered entity at a patient’s direction, HIPAA largely steps back. The most candid conversations now sit outside the legal perimeter.
+
+The business model compounds it. Default data retention, cross-product sharing, and training on user prompts are normal in consumer AI. Purpose is elastic. Consent is bundled. Deletion is slow or partial. Governance trails behind growth.
+
+Clinicians feel this in workflow. Patients arrive with AI-shaped narratives we cannot see, cannot validate, and cannot protect. Our systems treat this as patient education. It is actually unregulated care infrastructure.
+
+## Build the rule and the runtime
+
+We should not stretch 1996’s HIPAA over every chatbot. We should define a new federal category and make it enforceable: Consumer Health AI Services.
+
+## What the rule should require:
+- Clear scope: any service that processes user inputs reasonably related to health, including inferences.
+- Purpose limits: no ads or profiling based on health interactions. Use only for user-directed health functions.
+- Data minimization: collect the least necessary. Prefer on-device processing when feasible.
+- Training defaults: do not train on user conversations by default. Separate, explicit opt-in with granular scope and revocation.
+- Retention and deletion: short default retention. Verified deletion within defined timelines. No dark archives.
+- Security: end-to-end encryption in transit and at rest. Keys controlled by the user. Hardware-backed attestations for mobile and edge inference.
+- Transparency: standard transparency API for model versions, data flows, retention, and third-party sharing.
+- Auditability: independent audits, red-team reports, and reproducible evaluation of privacy claims.
+- Remedies: meaningful fines, breach notifications, and a private right of action. No pay-to-comply loopholes.
+- Interop guardrails: safe import and export with EHRs and PHRs without laundering data into ad networks.
+
+Rules without reference code rot. Physicians who code should ship a reference stack that makes compliance the path of least resistance.
+
+## Ship physician-controlled patterns patients can trust
+
+If we want honesty at 2 a.m., we must give patients a safe runtime for it. Here is what I would build and deploy:
+
+- Local-first chat for health: run a compact model on-device using Core ML or NNAPI. Default to no cloud, with clear toggles when calling out to larger models.
+- Patient data vault: an encrypted store for notes, labs, and device data where the keys live with the patient. No analytics SDKs. No third-party beacons.
+- Granular consent flows: purpose-bound, time-bound, and model-bound. Make revoke a first-class action. Show where every token went.
+- No-train guarantees: machine-enforced policies that prevent logs from being used for training. Publish attestations and test harnesses.
+- Clinician handoff: a one-tap export that creates a concise, patient-approved summary tagged as patient-supplied data for the chart. Opinionated templates over free text.
+- Red flag routes: automatic escalation when the chat reveals harm risk. Human review pathways with clear SLAs and documentation.
+- Open standards: FHIR import for patient-controlled records. A transparent privacy manifest any clinic or regulator can read.
+
+We can stop pretending patients will wait for our portals to improve. They already chose chat. Our job is to make that choice safe and clinically useful.
+
+## Clinic workflows that expect a parallel narrative
+
+Ask every patient a simple question at intake: did you use an AI tool for this issue, and do you want to share a summary? Put a patient-supplied narrative section in the chart with clear labeling and provenance. Keep it queryable, not buried in attachments.
+
+Close the loop. If the AI path produced a plan or fear, address it directly. Do not shame the behavior. Shape it. The fastest way to reduce harm is to bring the shadow record into the light with patient control intact.
+
+## The build is our responsibility
+
+If doctors sit this out, ad-tech will write medicine’s next chart. HIPAA will keep protecting the most guarded conversations while the most honest ones leak.
+
+I am not asking for another task force. I am asking us to write the rule, ship the SDKs, and publish the audits. Patients already voted with their thumbs. It is on us to make midnight honesty safe, private, and clinically sound.
