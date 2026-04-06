@@ -1,0 +1,71 @@
+---
+title: "HIPAA Stops at the Chat Window. Physicians Must Build the Next Privacy Rail"
+slug: "hipaa-stops-at-the-chat-window-physicians-must-build-the-next-privacy-rail"
+description: "Patients are most honest with chatbots, not charts. We need a physician-led privacy standard for consumer health AI now."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["privacy", "ai", "hipaa", "physician-builders"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+A patient will tell me a little and tell a chatbot everything. Symptoms. Fears. Family history. The late-night truth goes into a chat box, not the chart.
+
+The usual answer is to extend HIPAA and call it a day. That misses the architecture. HIPAA protects the bureaucracy. The most honest health conversations now happen outside it.
+
+If we keep treating this as a consent checkbox problem, we will keep losing trust. This is a systems problem, and systems are built.
+
+## What the source actually supports
+
+Henry Bair argues for a federal privacy protection rule tailored to consumer health AI. He states what every clinic is seeing: a parallel, more candid health narrative forming outside the medical record.
+
+The cited evidence is real but partial. KFF reports one-third of adults used AI for health information in the past year, and many uploaded personal medical data despite privacy concerns. The FTC actions against GoodRx and BetterHelp show health data beyond HIPAA can and will be exploited for advertising.
+
+This is a perspective piece, not a systematic review or a randomized trial. It is enough to define a clear risk and a policy gap. We do not need perfect evidence to stop obvious harm.
+
+## The architecture that makes honesty unsafe
+
+HIPAA binds covered entities and their business associates. Consumer AI tools sit in a different ecosystem with adtech incentives, opaque data flows, and no duty of care. That is not an accident. It is profitable.
+
+The clinic records what we must and signals permanence. The chat window offers speed, plausible deniability, and no immediate EHR footprint. Patients route honesty to the path with least friction. The market routes that honesty into analytics, targeting, and training unless a contract forbids it.
+
+Consent screens are decoration when the default pipeline rewards capture and reuse. Without enforceable rules, the most human data we touch becomes the easiest to mine.
+
+## What changes when physicians build
+
+When physicians build, we pull honesty back into protected rails without dragging patients through bureaucracy. I want three properties by default: local first, minimal by design, auditable end to end.
+
+## In practice that means clinic-grade AI gateways that:
+- Run models in HIPAA-eligible environments or on device when feasible, with clear model separation for PHI versus general use.
+- Enforce policy-as-code for PHI handling, with consent receipts, immutable audit logs, and one-click deletion that actually deletes.
+- Strip identifiers by default and write back only what clinicians elect to file, using tight FHIR scopes and event-based consent.
+- Publish a plain-language privacy label patients can read in 30 seconds. No trackers. No third-party pixels. No secondary use.
+
+I will not tell a patient to paste PHI into a general chatbot. I will give them a protected channel and own the obligations that come with it.
+
+## The federal rule we should demand
+
+Do not stretch HIPAA around every chatbot. Build a targeted Consumer Health AI Privacy Rule that sets the floor, not the ceiling.
+
+## Minimums I would require:
+- Default ban on secondary use of health-related inputs and outputs for advertising or model training without explicit, granular, revocable consent.
+- Data minimization and on-device or edge processing when technically available, with strict retention limits and verified deletion.
+- Consent receipts, standardized privacy nutrition labels, and machine-readable policy declarations for automated compliance checks.
+- Right to independent audit, incident reporting timelines, and penalties scaled to the sensitivity and volume of exposure.
+- Clear definitions of health-related data in consumer contexts, closing the current adtech loopholes.
+
+HHS and the FTC can do most of this today through rulemaking and enforcement guidance. Congress can harden it. Physicians should demand it.
+
+## Ship it this week
+
+Agency starts in clinic. Here is the immediate build list:
+- Kill third-party trackers on your website and portal. Today.
+- Stop recommending public chatbots for anything that smells like PHI. Offer a protected instance or nothing.
+- Stand up an audited AI gateway with a BAA-backed vendor or your own stack. Publish your privacy label.
+- Measure a real metric: percent of “shadow history” captured safely through your channel without auto-filing into the chart.
+- Write your policy as code. If your system cannot enforce it, you do not have a policy.
+
+Patients already chose the honest channel. Our job is to make that channel safe, visible, and clinically useful. If we do not build the rails, others will harvest the trust.
