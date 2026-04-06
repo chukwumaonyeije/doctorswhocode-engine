@@ -1,0 +1,75 @@
+---
+title: "Patients Tell Chatbots What They Won’t Tell Us. Build a Real Privacy Rule for Consumer Health AI."
+slug: "patients-tell-chatbots-what-they-won-t-tell-us-build-a-real-privacy-rule-for-con"
+description: "Patients are sharing their most honest health stories with chatbots outside HIPAA; physicians should code the standards and demand a federal rule that protects that candor."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["privacy", "ai-in-healthcare", "data-governance"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+A mother sat in triage with normal vitals and a knot in her stomach. The knot wasn’t in Epic. It lived in a long midnight thread with a chatbot where she finally wrote the words she avoided in clinic: “I’m scared this headache is an aneurysm.”
+
+That thread is her most honest health record. It sits outside the law we keep telling patients protects them.
+
+We keep asking if HIPAA should “cover AI.” Wrong question. The problem isn’t AI. It’s an architecture that makes the most candid conversations the least protected.
+
+## What the evidence actually supports
+
+The core facts are not controversial. HIPAA covers health systems, plans, and their associates. It generally does not cover consumer AI tools that patients use on their own. HHS has said that once data move from a covered entity to a third‑party app at a patient’s request, HIPAA usually stops at the door.
+
+Polling from KFF reports about one‑third of adults used AI for health info last year. Among those, 4 in 10 uploaded personal medical information, even though most said they worry about privacy. That is a lot of sensitive context flowing into systems built for engagement and growth, not clinical duty.
+
+The FTC has already brought cases against companies like GoodRx and BetterHelp for misuse of sensitive health data outside HIPAA. In BetterHelp, regulators alleged sharing of mental health details for advertising after promises of confidentiality. That is not a hypothetical harm.
+
+This is perspective and policy evidence, not randomized trials. But we do not need RCTs to see the governance gap. The signal is strong enough to act.
+
+## The architecture that makes honesty risky
+
+HIPAA was built for 1990s billing pipes. It orbits covered entities, not the modern reality where a patient’s first disclosure happens in a consumer chat box.
+
+Ad‑tech incentives reward capture, enrichment, and reuse. Default telemetry, SDKs, data brokers, and model training pipelines turn a confession into fuel. “Consent” is buried in dark‑pattern flows. De‑identification claims are often paper‑thin once you combine device IDs, location, and health inferences.
+
+Meanwhile, clinicians feel compelled to document everything in the EHR. Patients feel the opposite. They want a place to think out loud without a permanent diagnosis code. Our workflow punishes candor. Our law ignores where candor now happens.
+
+## Build the rule we actually need
+
+We do not need to shoehorn chatbots into HIPAA. We need a federal Consumer Health AI Privacy Rule with teeth. If a system processes consumer‑provided health data or makes health inferences, it should meet clinical‑grade privacy, period.
+
+## Here is the minimum spec I would ship:
+
+- Scope by data, not entity: Covers any product that ingests health inputs or outputs health inferences, regardless of HIPAA status.
+- No ads, no brokers, no targeted sharing: Ban advertising and data brokerage on covered data. No sharing with third parties except for core service delivery.
+- Data minimization and short retention: Collect only what is needed for the active session. Default deletion within 30 days unless the user opts in to longer retention they can see and revoke.
+- Training only with separate, explicit consent: No model training on user conversations without a clear, independent opt‑in and an easy off switch. Consent must be reversible. Honor deletion in training corpora via proven techniques or disallow training when deletion cannot be honored.
+- Local first where feasible: Prefer on‑device processing for redaction and summarization. Encrypt in transit and at rest. No default analytics on raw text.
+- Child and sensitive topic protections: Higher bar for minors, pregnancy, substance use, mental health, HIV, reproductive care, and intimate partner violence. Default no retention, no training, and no sharing.
+- Plain‑language privacy “nutrition label”: Who sees my data, for what, for how long, and how to delete it, in one screen. No dark patterns.
+- Independent audits and data flow maps: Annual third‑party audits, public data flow diagrams, model cards documenting safety and privacy risks, and breach notices within 72 hours.
+- Enforcement that matters: Joint FTC/HHS authority, algorithmic disgorgement, statutory damages, and a private right of action. Set a strong federal floor and let states go further.
+
+If this sounds strict, good. Patients are already acting like these tools are part of care. The law should meet the reality of use.
+
+## Workflow we should ship in clinics this year
+
+Policy will lag. We can fix workflow now.
+
+- Ask, don’t guess: Add one intake question in every clinic and telehealth visit. “Have you used an AI tool for this concern? Want to share a summary?” Normalize the shadow record without shaming it.
+- Patient‑controlled “sealed envelope”: Build a FHIR‑based segment that lets patients attach an AI summary to the visit with tight disclosure controls. It is visible for the episode unless the patient revokes. It does not autopropagate to problem lists.
+- On‑device redaction and summarization: Offer a simple app or portal tool that strips identifiers, collapses long chats into a one‑page clinical brief, and shows patients exactly what will be shared before they click send.
+- Keep it out of the billing exhaust: Do not let these attachments leak into prior auth packages, HIE feeds, or inbox marketing rules. Tag and route them like patient‑reported outcomes with a distinct access control.
+- Measure burden and benefit: Track how often patients share, clinician time spent, changes in diagnostic turns, and patient trust scores. If it adds friction, iterate. If it adds insight, scale.
+
+We should also publish an open spec for “Consumer Health AI Privacy Labels” and push vendors to adopt it. If they refuse, that tells our patients everything they need to know.
+
+## When physicians build, the center of gravity shifts
+
+When doctors write requirements, not just notes, the incentives change. We stop pretending HIPAA can do a job it was never built to do. We set a high bar for any tool that touches a health confession, regardless of who hosts it.
+
+I am not waiting for a perfect law. I will ask about AI use in every visit. I will push my system to add a sealed‑envelope segment. I will only recommend tools that meet the spec above and say so in public.
+
+Patients have already moved. Their most honest health stories are happening off our servers. Our job is to protect that honesty, bring it into care on their terms, and build the governance to keep it safe. If we do not, ad‑tech will write the future of our exam rooms.
