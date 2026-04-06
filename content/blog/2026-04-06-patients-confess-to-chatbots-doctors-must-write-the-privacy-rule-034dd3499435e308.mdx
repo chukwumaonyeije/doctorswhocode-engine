@@ -1,0 +1,76 @@
+---
+title: "Patients Confess to Chatbots. Doctors Must Write the Privacy Rule."
+slug: "patients-confess-to-chatbots-doctors-must-write-the-privacy-rule"
+description: "Honest health talk now lives in consumer AI chats outside HIPAA; we need a physician-built, enforceable privacy rule that protects it."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["ai-policy", "privacy", "hipaa"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+She handed me a months-long chat transcript. Headaches. Fear of aneurysm. Family history. Stress at work. She told the bot everything she never told us.
+
+Clinics make patients cautious. Chat windows make them candid. The most honest health conversations now live outside HIPAA.
+
+We keep framing this as digital literacy. It is a system design problem. The wrong law covers the wrong place in the workflow.
+
+## What the source actually supports
+
+Henry Bair, MD, MBA, flagged this shift plainly: patients are building a parallel health record in consumer AI. HIPAA does not touch it. That is accurate. HHS has said once a patient directs data to a third-party app, HIPAA generally steps back unless that app is a covered entity or business associate.
+
+Bair cites public data that fit what I see. KFF polling: about one-third of adults used AI for health info in the past year. Of those, four in ten uploaded personal medical information. Most are worried about privacy. The FTC has already nailed companies like GoodRx and BetterHelp for misuse of sensitive health data that sat outside HIPAA.
+
+This is a perspective piece with policy citations and enforcement examples, not a randomized trial. The completeness here is partial, but the direction is clear and supported. The exposure is real, the law is misaligned, and patient behavior is ahead of our governance.
+
+## The architecture that keeps honesty outside HIPAA
+
+Patients avoid the clinic record because it feels permanent and risky. They talk to chatbots because it feels private, fast, and judgment-free. That incentive gradient is architectural, not moral.
+
+HIPAA scopes to entities, not to the sensitivity of the data itself. Consumer AI lives outside that scope. Ad-tech lives there too. The default business model rewards collection, inference, and targeting. Even “anonymous” telemetry can reconstruct identity when tied to health queries. We built a maze where candor exits the protected zone and enters the market.
+
+The clinic side has its own problem. We push everything into templated notes that bloat, bill, and haunt. The result is predictable. Patients move the hard truths to a place that will listen without coding them to a problem list.
+
+## A physician spec for consumer health AI privacy
+
+Do not stretch a 1996 hospital law over modern chat systems. Write a targeted federal rule for consumer health AI. Physicians should help draft it.
+
+## Minimum viable rule, built for reality:
+
+- Scope by function, not license. If an app collects, infers, or stores health-related data or inferences from user input, it is in scope.
+- Purpose limitation. No ads, no brokers, no cross-site tracking for any in-scope data or inferences. Ever.
+- Data minimization and local-first. Collect the least necessary. Default to on-device or end-to-end encrypted processing when feasible.
+- No model training by default. Explicit, granular opt-in for using user data to train models. Opt-out must be honored and portable.
+- Consent that counts. Plain-language, layered consent with a standard “consent receipt” the user can store and revoke.
+- Deletion, portability, and provenance. Right to delete. Right to a machine-readable export with timestamps and model version. Chain-of-custody logs.
+- Inferences are protected. Treat derived mental health, reproductive health, and risk scores as sensitive on par with medical records.
+- Security and audit. Annual third-party security audits. Breach notification within a short, fixed window. Public enforcement reports.
+- Labeling. A simple “privacy label” for health AI, like nutrition facts, with five lines users actually understand.
+- Enforcement with teeth. Joint FTC and HHS OCR authority. State AGs as co-enforcers. Statutory damages to make it sting.
+
+Create a safe harbor for builders who keep computation local, ban third-party trackers, publish a data sheet, and open their audit trail. Reward privacy by design, not by press release.
+
+## Wire it into clinic and code
+
+Policy without workflow is theater. Here is what I would build and measure now:
+
+- Post a Patient Private Conversations Policy. In the clinic and portal. One page. What HIPAA covers. What it does not. How to talk safely with AI and with us.
+- Require BAAs or keep AI out of the clinic. Any AI tool we use must sit under a business associate agreement or a materially equivalent contract. No pixels. No SDK trackers. No exceptions.
+- Build a transcript bridge with consent. A simple import that lets patients share chatbot excerpts on their terms. Local redaction first. Map to FHIR QuestionnaireResponse with provenance. Keep the raw transcript out of the main note unless the patient wants it there.
+- Add a disclosure delta metric. Ask each patient: did you share more with a chatbot than with us? Track the gap. Aim to shrink it without forcing disclosure.
+- Ship a privacy label in our apps. If we ship or recommend an app, include a five-line privacy label and the data sheet. Refuse vendors who cannot produce both.
+- Run privacy rounds. Monthly. Inventory trackers, SDKs, and data flows in every digital touchpoint. Remove anything that phones home without a clinical reason.
+- Default to local. When we prototype LLM tools, start on-device or on-prem. Prove the benefit before any data leaves our walls.
+
+These are small builds with outsized trust returns. They also create the evidence and patterns a federal rule can adopt.
+
+## Choose to write the contract
+
+Patients are already telling the truth. They are just not telling it in places the law protects or our systems respect. If we do not write the privacy contract, ad-tech will.
+
+Doctors need to stop waiting for perfect legislation. Draft the spec. Publish the label. Demand the BAA. Build the bridge. Measure the gap. Then take that lived design to regulators.
+
+The future of medicine will be shaped where honesty feels safe. Our responsibility is simple. Make the honest place the protected place. And do it in code, contracts, and clinic workflows that any patient can trust.
