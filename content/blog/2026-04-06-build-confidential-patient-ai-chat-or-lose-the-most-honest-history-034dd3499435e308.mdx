@@ -1,0 +1,76 @@
+---
+title: "Build Confidential Patient-AI Chat Or Lose The Most Honest History"
+slug: "build-confidential-patient-ai-chat-or-lose-the-most-honest-history"
+description: "Patients now confess to chatbots, not charts. HIPAA does not cover it. Here is what we must build and demand."
+pubDate: "2026-04-06"
+author: "Chukwuma Onyeije, MD, FACOG"
+draft: true
+recordId: "034dd3499435e308"
+tags: ["privacy", "ai", "governance"]
+sourceType: "text"
+sourceReference: "inline:text"
+completeness: "partial"
+---
+
+Last week a patient arrived with a neat blood pressure log and an empty history. Then she showed me her phone. Weeks of midnight chats about headaches, grief, and a family aneurysm. None of it in the chart. All of it in a consumer AI.
+
+We label this misinformation or overreliance on tech. That is the wrong frame. This is a confidentiality failure. Patients are choosing the only venue that feels safe to tell the truth.
+
+## What the source actually supports
+
+Henry Bair, an ophthalmology resident, described patients sharing more with chatbots than with clinicians. He points out a real gap. HIPAA protects data held by covered entities and their business associates. It generally does not protect what patients type into consumer AI. HHS has said that once a patient directs a covered entity to send data to a third-party app, HIPAA typically stops at the app’s door.
+
+Bair cites a KFF poll: about a third of adults used AI for health information last year. Many uploaded personal medical details. Most were worried about privacy. He also notes FTC actions against GoodRx and BetterHelp for misuse of health data outside HIPAA.
+
+This is a perspective piece, not a systematic review. The poll is self-report. The FTC cases are specific fact patterns. Still, the evidence is enough to establish a structural privacy hole where patients are talking the most.
+
+## The structural failure: privacy by venue, not by content
+
+HIPAA is entity based, not content based. If your story lands in Epic, it is protected. If the same story lands in a chatbot built on adtech, it is exposed.
+
+AI vendors optimize for growth and data. Ad and analytics SDKs are the default. Retention is the default. Training on user inputs is the default. The incentives are plain.
+
+Healthcare compliance culture blocks anything that smells like risk, so we keep patient-AI chat outside our walls. That pushes the most candid history into surveillance territory. A patchwork of state privacy laws cannot fix this. The architecture is wrong.
+
+## Build the clinical path: confidential chat by design
+
+We should not wait for a memo. Physicians who code can build a clinical-grade alternative now. Requirements are clear.
+
+- On-device or edge inference for sensitive modes. No raw text leaves the device unless a patient opts to share.
+- Default no retain, no train, no trackers. Session wipes on close unless a patient saves.
+- Cryptographic consent receipts. Patients can see, revoke, and audit every data flow.
+- A Health Conversation Mode standard across LLMs: purpose-limited use, encryption, independent audit, signed attestations, and a public policy file machines can read.
+- A FHIR Conversation resource and redaction pipeline. Patients can push a summary into the EHR with reversible consent. Automatic scrubbing of family identifiers and third-party PII.
+- Risk triage as a service we control. Suicidality, stroke warnings, or med errors get highlighted for human review when the patient opts in.
+- A clinical trust label we can recommend. Open spec. Open test suite. No dark patterns.
+
+If we want candor, we must guarantee it in code and defaults, not a FAQ.
+
+## Governance that matches medicine, not marketing
+
+We also need a federal rule built for consumer health AI. Not a stretched HIPAA. A modern confidentiality duty for health conversations.
+
+- Purpose limitation: use only for providing health advice or patient-selected features.
+- Retention limits by default. Thirty days or less unless the patient extends it.
+- Model training opt-in only. Off by default. Clear, granular controls.
+- Ban sale or sharing of health conversation data and inferences to data brokers, advertisers, insurers, or employers.
+- Independent security and privacy audits with public summaries.
+- Expand and modernize the Health Breach Notification Rule for AI contexts.
+- Private right of action and meaningful penalties, so this is more than a press release.
+- Clear, standardized labeling when a product is operating in Health Conversation Mode.
+
+HHS and the FTC can move here. Congress can codify. Preempt the weakest state standards. Protect the most honest words a patient says this year.
+
+## What changes when physicians build
+
+Put this into workflow. A Pre-Visit Private Intake that patients complete on their device in clinic parking lots and living rooms. The AI helps them say the quiet part out loud. They choose what moves into the chart. The rest stays in a sealed local journal they control.
+
+Clinicians get a time-stamped, patient-signed summary with flags for what matters today. We stop hunting through MyChart messages for the story. We measure what improves: diagnostic yield, reduced documentation burden, fewer missed red flags, patient trust.
+
+We also own the threat model. We test prompt injection, jailbreaks, and data exfiltration like we test order sets. We publish incident reports. We iterate in the open.
+
+## Choose to build the confidant
+
+Patients have already moved the most intimate part of medicine to chat. We can either let adtech harvest it or build a clinical confidant worthy of their trust. That is our lane.
+
+I am not waiting for a vendor roadmap. Physicians must set the requirements, ship the reference implementation, and demand a federal rule that backs it. If we do, we reclaim the history that actually saves lives. If we do not, the most honest health record will remain monetized, invisible, and outside medicine.
